@@ -104,7 +104,7 @@ include "Library/Strings.asm"
 CODESEG
 include "Library/Alien.asm"
 include "Library/Procs.asm"
-include "Library/CC.asm" ; #Jieco
+include "Library/Combo.asm" ; #Jieco
 
 ; -----------------------------------------------------------
 ; Prints the background image of the game (space background)
