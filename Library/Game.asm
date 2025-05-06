@@ -39,6 +39,11 @@ include "Library/Strings.asm"
 	AlienLength						equ	32
 	AlienHeight						equ	32
 
+	ExplosionFileName				db	'Assets/Explode.bmp',0
+	ExplosionFileHandle				dw	?
+	ExplosionLength					equ	32
+	ExplosionHeight					equ	32
+
 	SpaceBgFileName					db	'Assets/SpaceBg.bmp',0
 	SpaceBgFileHandle				dw	?
 
@@ -356,6 +361,10 @@ proc InitializeGame
 	mov [byte ptr Level], 1
 
 
+	push offset ExplosionFileName
+	push offset ExplosionFileHandle
+	call OpenFile
+
 	call InitializeLevel
 
 	ret
@@ -581,7 +590,7 @@ proc PlayGame
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
-	jmp @@readKey
+	jmp @@printShooterAgain
 
 @@regenerateHeart:
     cmp [LivesRemaining], 3 ; Max lives is 3
@@ -943,8 +952,10 @@ proc PlayGame
 
 	call playSoundMenu
 
-
 	push [AlienFileHandle]
+	call CloseFile
+
+	push [ExplosionFileHandle]
 	call CloseFile
 
 	ret
