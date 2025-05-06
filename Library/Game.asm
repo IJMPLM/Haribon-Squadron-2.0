@@ -80,7 +80,7 @@ include "Library/Strings.asm"
 	AliensShootingRowLocations	dw	10 dup (?)
 
 	Score							db	?
-	Combo 						db  ?		; (Jieco)
+
 	LivesRemaining					db	?
 	Level							db	?
 
@@ -104,6 +104,7 @@ include "Library/Strings.asm"
 CODESEG
 include "Library/Alien.asm"
 include "Library/Procs.asm"
+include "Library/CC.asm" ; #Jieco
 
 ; -----------------------------------------------------------
 ; Prints the background image of the game (space background)
@@ -166,16 +167,8 @@ proc PrintStatsArea
 	mov dx, offset ScoreString
 	int 21h
 
-	;Combo label (Jieco):
-	xor bh, bh
-	mov dh, 23
-	mov dl, 35
-	mov ah, 2
-	int 10h
-
-	mov ah, 9
-	mov dx, offset ComboString
-	int 21h
+	;Combo label #Jieco:
+	call DisplayCombo
 
 	ret
 endp PrintStatsArea
@@ -253,40 +246,6 @@ proc UpdateScoreStat
 
 	ret
 endp UpdateScoreStat
-
-;--------------------------------------------------------------------
-; Updates the combo shown on screen (Jieco)
-;--------------------------------------------------------------------
-proc UpdateComboStat
-	xor bh, bh
-	mov dh, 23
-	mov dl, 37
-	mov ah, 2
-	int 10h
-
-	xor ah, ah
-	mov al, [Combo]
-	
-	; [ ] cmp if ComboValue = ComboMax, if yes stops, otherwise continue converting
-	; [ ] should reset to 0 if player killed 
-	; [ ] or hits boundaries
-	; [ ] combo after 9x should be added to score +1 +1 ... sa score
-	
-
-@@ConvertComboValue:
-	add al, '0'   ; convert to ASCII
-	mov dl, al
-	mov ah, 2
-	int 21h               
-
-@@EndUpdateCombo:
-	ret
-
-	; mov ah, 9
-	; mov dx, offset ComboCounter
-	; int 21h
-endp UpdateComboStat
-
 
 ; -------------------------------------------
 ; Updates the level and score shown on screen
@@ -542,7 +501,7 @@ proc PlayGame
 	call PrintStatsArea
 	call UpdatePlayerStats
 	call UpdateLives
-	call UpdateComboStat
+	call UpdateComboStat ; #Jieco
 
 	call CheckAndMoveAliens
 
@@ -807,8 +766,8 @@ proc PlayGame
 	pop cx
 	loop @@blinkShooter
 
-	; reset combo (Jieco)
-	mov [byte ptr Combo], 0
+	; reset combo #Jieco
+	mov [byte ptr COMBO_VAL], 0
 
 	;sub 5 score if possible, if he doesn't have 5 yet, just reset to 0:
 	cmp [byte ptr Score], 5
