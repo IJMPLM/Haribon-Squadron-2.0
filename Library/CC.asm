@@ -12,23 +12,19 @@
 ; Checklist:
 ;   [/] cmp if COMBO_VAL = COMBO_MAX, if yes stops, otherwise continue incrementing
 ;   [/] should reset to 0 if player killed 
-;   [ ] or hits boundaries
-;   [ ] combo after 9x should be added to score +1 +1 ... sa score
+;   [ ] or hits boundaries, using COMBO_ACTIVE
+;   [/] combo after 9x should be added to score +1 +1 ... sa score
 ; 
 ; -----------------------------------------------------------
 
 DATASEG
-    COMBO_COUNT db 0        ; unused
-    COMBO_COUNT_MAX db 9    ; unused
-    COMBO_ACTIVE db 0       ; unused 
-
 	COMBO_STRING    db  '| ', '$' ; label
 
+    COMBO_ACTIVE db 0       ; sets state of combo
     COMBO_VAL       db  ?   ; where combo count is stored
-    COMBO_MAX       db  9   ; set combo cap to 9
+    COMBO_MAX       db  3   ; set combo cap to 9
 
 CODESEG
-
 ;--------------------------------------------------------------------
 ; Display the combo label on screen
 ;--------------------------------------------------------------------
@@ -74,12 +70,14 @@ endp UpdateComboStat
 proc IncrementCombo ; called in Alien.asm, search word "#Jieco"
     xor ah, ah
     mov al, [COMBO_VAL]
-	cmp [COMBO_MAX], al
-    je @@EndIncrement
+	cmp [COMBO_MAX], al ; check if COMBO_VAL has reached COMBO_MAX
+    je @@ComboMax       ; Jump if yes
 
 @@IncrementPhase:
     inc [byte ptr COMBO_VAL]
+    ret
 
-@@EndIncrement:
+@@ComboMax:
+    inc [byte ptr Score]
     ret
 endp IncrementCombo
