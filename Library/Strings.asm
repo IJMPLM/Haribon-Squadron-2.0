@@ -5,6 +5,7 @@
 
 DATASEG
 	ScoreString				db	'Score: ', '$'
+	ComboString				db  '| ', '$' ; (Jieco)
 	LevelString				db	'Level: ', '$'
 
 	GameOverString			db	'Game Over !$'

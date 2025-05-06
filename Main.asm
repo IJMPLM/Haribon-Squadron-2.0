@@ -10,11 +10,10 @@ P386
 
 CODESEG
 
-include ".\Library\FileUse.asm"
+include "Library/FileUse.asm"
 include "Library/Game.asm"
 include "Library/Print.asm"
 include "Library/Menus.asm"
-include "Library/CC.asm"
 
 start:
     mov ax, @data

@@ -601,6 +601,9 @@ proc CheckAndHitAlien
 	;Increase and update score:
 	inc [byte ptr Score]
 	call UpdateScoreStat
+	; Increase and update combo upon consecutive hit (unfinished): 
+	inc [byte ptr Combo]
+	call UpdateComboStat ; (Jieco)
 
 	pop ax
 	;clear hit Alien print

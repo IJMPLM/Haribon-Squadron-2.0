@@ -63,7 +63,6 @@ include "Library/Strings.asm"
 	AliensStatusArray				db	24 dup (?)
 
 	AliensLoopMoveCounter			db	? ;Aliens move every 4 repeats of the game loop
-
 	
 	ShooterLineLocation				equ 149
 	ShooterRowLocation				dw	?
@@ -81,6 +80,7 @@ include "Library/Strings.asm"
 	AliensShootingRowLocations	dw	10 dup (?)
 
 	Score							db	?
+	Combo 						db  ?		; (Jieco)
 	LivesRemaining					db	?
 	Level							db	?
 
@@ -158,12 +158,23 @@ proc PrintStatsArea
 	;Score label:
 	xor bh, bh
 	mov dh, 23
-	mov dl, 29
+	mov dl, 24 ; 29
 	mov ah, 2
 	int 10h
 
 	mov ah, 9
 	mov dx, offset ScoreString
+	int 21h
+
+	;Combo label (Jieco):
+	xor bh, bh
+	mov dh, 23
+	mov dl, 35
+	mov ah, 2
+	int 10h
+
+	mov ah, 9
+	mov dx, offset ComboString
 	int 21h
 
 	ret
@@ -222,7 +233,7 @@ endp UpdateLives
 proc UpdateScoreStat
 	xor bh, bh
 	mov dh, 23
-	mov dl, 36
+	mov dl, 31
 	mov ah, 2
 	int 10h
 
@@ -242,6 +253,39 @@ proc UpdateScoreStat
 
 	ret
 endp UpdateScoreStat
+
+;--------------------------------------------------------------------
+; Updates the combo shown on screen (Jieco)
+;--------------------------------------------------------------------
+proc UpdateComboStat
+	xor bh, bh
+	mov dh, 23
+	mov dl, 37
+	mov ah, 2
+	int 10h
+
+	xor ah, ah
+	mov al, [Combo]
+	
+	; [ ] cmp if ComboValue = ComboMax, if yes stops, otherwise continue converting
+	; [ ] should reset to 0 if player killed 
+	; [ ] or hits boundaries
+	; [ ] combo after 9x should be added to score +1 +1 ... sa score
+	
+
+@@ConvertComboValue:
+	add al, '0'   ; convert to ASCII
+	mov dl, al
+	mov ah, 2
+	int 21h               
+
+@@EndUpdateCombo:
+	ret
+
+	; mov ah, 9
+	; mov dx, offset ComboCounter
+	; int 21h
+endp UpdateComboStat
 
 
 ; -------------------------------------------
@@ -279,7 +323,6 @@ proc MoveToStart
 
 	mov [byte ptr AliensPrintStartLine], 10
 	mov [byte ptr AliensPrintStartRow], 8
-
 
 	mov [word ptr ShooterRowLocation], 152
 	mov [byte ptr PlayerShootingExists], 0
@@ -499,6 +542,7 @@ proc PlayGame
 	call PrintStatsArea
 	call UpdatePlayerStats
 	call UpdateLives
+	call UpdateComboStat
 
 	call CheckAndMoveAliens
 
@@ -762,6 +806,9 @@ proc PlayGame
 
 	pop cx
 	loop @@blinkShooter
+
+	; reset combo (Jieco)
+	mov [byte ptr Combo], 0
 
 	;sub 5 score if possible, if he doesn't have 5 yet, just reset to 0:
 	cmp [byte ptr Score], 5
