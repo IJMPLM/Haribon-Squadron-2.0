@@ -561,54 +561,68 @@ proc PlayGame
 
 	jz @@checkShotStatus
 
-	;Clean buffer:
- 	push ax
- 	xor al, al
- 	mov ah, 0ch
- 	int 21h
- 	pop ax
-	
-	;Check which key was pressed:
-	cmp ah, 1 ;Esc
-	je @@procEnd
+    ; Clean buffer:
+    push ax
+    xor al, al
+    mov ah, 0ch
+    int 21h
+    pop ax
 
-	cmp ah, 39h ;Space
+    ; Check which key was pressed:
+    cmp ah, 1 ; Esc
+    je @@procEnd
 
-	je @@shootPressed
+    cmp ah, 39h ; Space
+    je @@shootPressed
 
-	cmp ah, 4Bh ;Left
-	jne @@checkRight
+    cmp ah, 4Bh ; Left
+    je @@moveLeft
 
-	cmp [word ptr ShooterRowLocation], 21
-	jb @@clearShot
+    cmp ah, 4Dh ; Right
+    je @@moveRight
 
-	;Clear current shooter print:
-	push ShooterLength
-	push ShooterHeight
-	push ShooterLineLocation
-	push [word ptr ShooterRowLocation]
-	push BlackColor
-	call PrintColor
+    cmp ah, 2Ch ; Z (Regenerate Heart)
+    je @@regenerateHeart
 
-	sub [word ptr ShooterRowLocation], 10
-	jmp @@printShooterAgain
+	jmp @@readKey
 
-@@checkRight:
-	cmp ah, 4Dh 
-	jne @@readKey
+@@regenerateHeart:
+    cmp [LivesRemaining], 3 ; Max lives is 3
+    jae @@readKey
 
-	cmp [word ptr ShooterRowLocation], 290
-	ja @@clearShot
+    inc [LivesRemaining]
+    call UpdateLives
+    jmp @@readKey
 
-	;Clear current shooter print:
-	push ShooterLength
-	push ShooterHeight
-	push ShooterLineLocation
-	push [word ptr ShooterRowLocation]
-	push BlackColor
-	call PrintColor
+@@moveLeft:
+    cmp [word ptr ShooterRowLocation], 21
+    jb @@clearShot
 
-	add [word ptr ShooterRowLocation], 10
+    ; Clear current shooter print:
+    push ShooterLength
+    push ShooterHeight
+    push ShooterLineLocation
+    push [word ptr ShooterRowLocation]
+    push BlackColor
+    call PrintColor
+
+    sub [word ptr ShooterRowLocation], 10
+    jmp @@printShooterAgain
+
+@@moveRight:
+    cmp [word ptr ShooterRowLocation], 290
+    ja @@clearShot
+
+    ; Clear current shooter print:
+    push ShooterLength
+    push ShooterHeight
+    push ShooterLineLocation
+    push [word ptr ShooterRowLocation]
+    push BlackColor
+    call PrintColor
+
+    add [word ptr ShooterRowLocation], 10
+    jmp @@printShooterAgain
 
 @@printShooterAgain:
 	push [ShooterFileHandle]
