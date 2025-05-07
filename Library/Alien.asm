@@ -48,17 +48,19 @@ proc PrintAliens
     push AlienLength
     push AlienHeight
     push [word ptr bp - 2]
-    push [word ptr bp - 4]
+    push [word ptr bp - 4] ; i want to make it more left
     push offset FileReadBuffer
     call PrintBMP
     jmp @@continueAlien
 
 @@printBlackAlien:
     ; Print black rectangle for dead aliens:
-    push 36
-    push 24
+    push 42
+    push AlienHeight
     push [word ptr bp - 2]
-    push [word ptr bp - 4]
+	mov ax, [bp - 4]
+	sub ax, 10
+	push ax
     push BlackColor
     call PrintColor
 
