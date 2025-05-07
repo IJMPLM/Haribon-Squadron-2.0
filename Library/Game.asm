@@ -10,6 +10,8 @@ include "Library/Strings.asm"
 	DebugBool						db	0
 	FreezeActive					db	0    ; Freeze state flag
 	FreezeCounter					dw	0    ; Counter for freeze duration
+	InvincibleActive				db	0    ; Invincibility state flag
+	InvincibleCounter				dw	0    ; Counter for invincibility duration
 	
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
@@ -369,6 +371,21 @@ endp InitializeGame
 ; If true, ax = 1. If not, ax = 0.
 ; ------------------------------------------------
 proc CheckIfPlayerDied
+	; Check invincibility first
+	cmp [byte ptr InvincibleActive], 1
+	je @@returnZero    ; If invincible, player can't be hit
+
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@normalCheck
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@returnZero
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@normalCheck:
 	xor ch, ch
 	mov cl, [AliensShootingCurrentAmount]
 	cmp cx, 0
@@ -585,9 +602,20 @@ proc PlayGame
     cmp ah, 2Dh ; X key for freeze
     je @@freezePressed
 
+    cmp ah, 2Eh ; C key for invincibility
+    je @@invincibilityPressed
+
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
+    jmp @@readKey
+
+@@invincibilityPressed:
+    cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
+    je @@readKey
+    
+    mov [byte ptr InvincibleActive], 1   ; Activate invincibility
+    mov [word ptr InvincibleCounter], 90 ; Set duration (5 seconds)
     jmp @@readKey
 
 @@freezePressed:
@@ -646,6 +674,17 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@checkPlayerShot
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@checkPlayerShot
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@checkPlayerShot:
 	;Check if shooting already exists in screen:
 	cmp [byte ptr PlayerShootingExists], 0
 	jne @@moveShootingUp
@@ -969,40 +1008,3 @@ proc PlayGame
 
 	ret
 endp PlayGame
-
-proc CheckAndMoveAliens
-    cmp [byte ptr FreezeActive], 1
-    jne @@normalMovement
-    
-    dec [FreezeCounter]
-    cmp [FreezeCounter], 0
-    jne @@skipMovement   ; Skip movement while frozen
-    
-    mov [byte ptr FreezeActive], 0   ; Unfreeze when counter reaches 0
-
-@@normalMovement:
-    inc [byte ptr AliensLoopMoveCounter]
-    cmp [byte ptr AliensLoopMoveCounter], 4
-    jb @@skipMovement
-
-    mov [byte ptr AliensLoopMoveCounter], 0
-
-    ; Check if moving to right:
-    cmp [byte ptr AliensMoveRightBool], 1
-    jne @@moveLeft
-
-    call ClearAliens
-    call PrintAliens
-    call UpdateAliensLocation
-    mov [byte ptr AliensLoopMoveCounter], 0
-    jmp @@skipMovement
-
-@@moveLeft:
-    call ClearAliens
-    call PrintAliens
-    call UpdateAliensLocation
-    mov [byte ptr AliensLoopMoveCounter], 0
-
-@@skipMovement:
-    ret
-endp CheckAndMoveAliens
