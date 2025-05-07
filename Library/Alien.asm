@@ -600,6 +600,7 @@ proc CheckAndHitAlien
 
 	;Increase and update combo upon consecutive hit 
 	call ValidateCombo ; #Jieco
+  
 	call UpdateComboStat 
 
 	;Increase and update score:
