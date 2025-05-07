@@ -5,12 +5,12 @@
 
 # Controller Configuration
 Keyboard Input    -> Controller Input (DS4) 
-- Left Arrow Key    -> Left Trigger
-- Right Arrow Key   -> Right Trigger
+- Left Arrow Key    -> Left LeftStick
+- Right Arrow Key   -> Right LeftStick
 - Spacebar          -> Button (X)
-- Esc               -> Button (O)
-- I                 -> Button (Square)
-- T                 -> Button (Trigangle)
+- Esc               -> Button (Share)
+- I                 -> Up LeftStick
+- T                 -> Down LeftStick
 - Enter/P/Y         -> Button (Options)
 
 Suggested Power Ups Configuration

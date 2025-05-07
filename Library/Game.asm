@@ -8,7 +8,11 @@ DATASEG
 include "Library/Strings.asm"
 
 	DebugBool						db	0
-
+	FreezeActive					db	0    ; Freeze state flag
+	FreezeCounter					dw	0    ; Counter for freeze duration
+	InvincibleActive				db	0    ; Invincibility state flag
+	InvincibleCounter				dw	0    ; Counter for invincibility duration
+	
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
 ; -----------------------------------------------------------
@@ -367,6 +371,21 @@ endp InitializeGame
 ; If true, ax = 1. If not, ax = 0.
 ; ------------------------------------------------
 proc CheckIfPlayerDied
+	; Check invincibility first
+	cmp [byte ptr InvincibleActive], 1
+	je @@returnZero    ; If invincible, player can't be hit
+
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@normalCheck
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@returnZero
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@normalCheck:
 	xor ch, ch
 	mov cl, [AliensShootingCurrentAmount]
 	cmp cx, 0
@@ -560,54 +579,90 @@ proc PlayGame
 
 	jz @@checkShotStatus
 
-	;Clean buffer:
- 	push ax
- 	xor al, al
- 	mov ah, 0ch
- 	int 21h
- 	pop ax
-	
-	;Check which key was pressed:
-	cmp ah, 1 ;Esc
-	je @@procEnd
+    ; Clean buffer:
+    push ax
+    xor al, al
+    mov ah, 0ch
+    int 21h
+    pop ax
 
-	cmp ah, 39h ;Space
+    ; Check which key was pressed:
+    cmp ah, 1 ; Esc
+    je @@procEnd
 
-	je @@shootPressed
+    cmp ah, 39h ; Space
+    je @@shootPressed
 
-	cmp ah, 4Bh ;Left
-	jne @@checkRight
+    cmp ah, 4Bh ; Left
+    je @@moveLeft
 
-	cmp [word ptr ShooterRowLocation], 21
-	jb @@clearShot
+    cmp ah, 4Dh ; Right
+    je @@moveRight
 
-	;Clear current shooter print:
-	push ShooterLength
-	push ShooterHeight
-	push ShooterLineLocation
-	push [word ptr ShooterRowLocation]
-	push BlackColor
-	call PrintColor
+    cmp ah, 2Dh ; X key for freeze
+    je @@freezePressed
 
-	sub [word ptr ShooterRowLocation], 10
-	jmp @@printShooterAgain
+    cmp ah, 2Eh ; C key for invincibility
+    je @@invincibilityPressed
 
-@@checkRight:
-	cmp ah, 4Dh 
-	jne @@readKey
+    cmp ah, 2Ch ; Z (Regenerate Heart)
+    je @@regenerateHeart
 
-	cmp [word ptr ShooterRowLocation], 290
-	ja @@clearShot
+    jmp @@readKey
 
-	;Clear current shooter print:
-	push ShooterLength
-	push ShooterHeight
-	push ShooterLineLocation
-	push [word ptr ShooterRowLocation]
-	push BlackColor
-	call PrintColor
+@@invincibilityPressed:
+    cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
+    je @@readKey
+    
+    mov [byte ptr InvincibleActive], 1   ; Activate invincibility
+    mov [word ptr InvincibleCounter], 90 ; Set duration (5 seconds)
+    jmp @@readKey
 
-	add [word ptr ShooterRowLocation], 10
+@@freezePressed:
+    cmp [byte ptr FreezeActive], 1  ; Check if already frozen
+    je @@readKey
+    
+    mov [byte ptr FreezeActive], 1   ; Activate freeze
+    mov [word ptr FreezeCounter], 54 ; Set duration (3 seconds; 18 ticks/second)
+    jmp @@readKey
+
+@@regenerateHeart:
+    cmp [LivesRemaining], 3 ; Max lives is 3
+    jae @@readKey
+
+    inc [LivesRemaining]
+    call UpdateLives
+    jmp @@readKey
+
+@@moveLeft:
+    cmp [word ptr ShooterRowLocation], 21
+    jb @@clearShot
+
+    ; Clear current shooter print:
+    push ShooterLength
+    push ShooterHeight
+    push ShooterLineLocation
+    push [word ptr ShooterRowLocation]
+    push BlackColor
+    call PrintColor
+
+    sub [word ptr ShooterRowLocation], 10
+    jmp @@printShooterAgain
+
+@@moveRight:
+    cmp [word ptr ShooterRowLocation], 290
+    ja @@clearShot
+
+    ; Clear current shooter print:
+    push ShooterLength
+    push ShooterHeight
+    push ShooterLineLocation
+    push [word ptr ShooterRowLocation]
+    push BlackColor
+    call PrintColor
+
+    add [word ptr ShooterRowLocation], 10
+    jmp @@printShooterAgain
 
 @@printShooterAgain:
 	push [ShooterFileHandle]
@@ -619,6 +674,17 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@checkPlayerShot
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@checkPlayerShot
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@checkPlayerShot:
 	;Check if shooting already exists in screen:
 	cmp [byte ptr PlayerShootingExists], 0
 	jne @@moveShootingUp

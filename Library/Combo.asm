@@ -47,7 +47,7 @@ proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 	mov dh, 23
 	mov dl, 37
 	mov ah, 2
-	int 10h         
+	int 10h
 
 	xor ah, ah
 	mov al, [COMBO_VAL]
