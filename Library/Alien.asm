@@ -184,22 +184,48 @@ endp UpdateAliensLocation
 ; When updated location is updated and Aliens are printed again
 ; ---------------------------------------------------------------
 proc CheckAndMoveAliens
-	cmp [byte ptr AliensLoopMoveCounter], 3
-	jne @@skipPrint
+    ; Check and update freeze state first
+    cmp [byte ptr FreezeActive], 1
+    jne @@checkMovement
+    
+    dec [FreezeCounter]
+    cmp [FreezeCounter], 0
+    jne @@skipAllMovement   ; Skip movement while frozen
+    
+    mov [byte ptr FreezeActive], 0   ; Unfreeze when counter reaches 0
 
-	;Move:
-	call ClearAliens
-	call PrintAliens
-	call UpdateAliensLocation
-	mov [byte ptr AliensLoopMoveCounter], 0
-	jmp @@procEnd
+@@checkMovement:
+    inc [byte ptr AliensLoopMoveCounter]
+    cmp [byte ptr AliensLoopMoveCounter], 4
+    jb @@skipAllMovement
 
-@@skipPrint:
-	inc [byte ptr AliensLoopMoveCounter]
+    mov [byte ptr AliensLoopMoveCounter], 0
 
-@@procEnd:
-	ret
+    ; Check if moving to right:
+    cmp [byte ptr AliensMoveRightBool], 1
+    jne @@moveLeft
+
+    ;Move:
+    call ClearAliens
+    call PrintAliens
+    call UpdateAliensLocation
+    mov [byte ptr AliensLoopMoveCounter], 0
+    jmp @@endProc
+
+@@moveLeft:
+    ;Move aliens left
+    call ClearAliens
+    call PrintAliens
+    call UpdateAliensLocation
+    mov [byte ptr AliensLoopMoveCounter], 0
+
+@@skipAllMovement:
+    ret
+
+@@endProc:
+    ret
 endp CheckAndMoveAliens
+
 
 ; -------------------------------------------------
 ; Choosing a random Alien to shoot

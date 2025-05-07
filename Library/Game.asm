@@ -8,7 +8,11 @@ DATASEG
 include "Library/Strings.asm"
 
 	DebugBool						db	0
-
+	FreezeActive					db	0    ; Freeze state flag
+	FreezeCounter					dw	0    ; Counter for freeze duration
+	InvincibleActive				db	0    ; Invincibility state flag
+	InvincibleCounter				dw	0    ; Counter for invincibility duration
+	
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
 ; -----------------------------------------------------------
@@ -367,6 +371,21 @@ endp InitializeGame
 ; If true, ax = 1. If not, ax = 0.
 ; ------------------------------------------------
 proc CheckIfPlayerDied
+	; Check invincibility first
+	cmp [byte ptr InvincibleActive], 1
+	je @@returnZero    ; If invincible, player can't be hit
+
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@normalCheck
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@returnZero
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@normalCheck:
 	xor ch, ch
 	mov cl, [AliensShootingCurrentAmount]
 	cmp cx, 0
@@ -580,10 +599,32 @@ proc PlayGame
     cmp ah, 4Dh ; Right
     je @@moveRight
 
+    cmp ah, 2Dh ; X key for freeze
+    je @@freezePressed
+
+    cmp ah, 2Eh ; C key for invincibility
+    je @@invincibilityPressed
+
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
-	jmp @@readKey
+    jmp @@readKey
+
+@@invincibilityPressed:
+    cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
+    je @@readKey
+    
+    mov [byte ptr InvincibleActive], 1   ; Activate invincibility
+    mov [word ptr InvincibleCounter], 90 ; Set duration (5 seconds)
+    jmp @@readKey
+
+@@freezePressed:
+    cmp [byte ptr FreezeActive], 1  ; Check if already frozen
+    je @@readKey
+    
+    mov [byte ptr FreezeActive], 1   ; Activate freeze
+    mov [word ptr FreezeCounter], 54 ; Set duration (3 seconds; 18 ticks/second)
+    jmp @@readKey
 
 @@regenerateHeart:
     cmp [LivesRemaining], 3 ; Max lives is 3
@@ -633,6 +674,17 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@checkPlayerShot
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@checkPlayerShot
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@checkPlayerShot:
 	;Check if shooting already exists in screen:
 	cmp [byte ptr PlayerShootingExists], 0
 	jne @@moveShootingUp
