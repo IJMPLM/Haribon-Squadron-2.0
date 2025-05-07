@@ -40,33 +40,22 @@ proc PrintAliens
 
 	push bx
 
-    cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@printBlackAlien
+	cmp [byte ptr AliensStatusArray + bx], 1
+	jne @@skipAlien
 
-    ; Print Alien:
-    push [word ptr AlienFileHandle]
-    push AlienLength
-    push AlienHeight
-    push [word ptr bp - 2]
-    push [word ptr bp - 4] ; i want to make it more left
-    push offset FileReadBuffer
-    call PrintBMP
-    jmp @@continueAlien
+	
+	;Print Alien:
+	push [word ptr AlienFileHandle]
+	push AlienLength
+	push AlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
 
-@@printBlackAlien:
-    ; Print black rectangle for dead aliens:
-    push 42
-    push AlienHeight
-    push [word ptr bp - 2]
-	mov ax, [bp - 4]
-	sub ax, 10
-	push ax
-    push BlackColor
-    call PrintColor
-
-@@continueAlien:
-    pop bx
-    inc bx
+@@skipAlien:
+	pop bx
+	inc bx
 
 	pop cx
 
@@ -629,22 +618,21 @@ proc CheckAndHitAlien
 
 	mov dx, ax
 	add dx, [AliensPrintStartLine]
-	add dx, 0 ; Adjust alignment vertically
+	sub dx, 4
 
 	pop ax
 	shr ax, 8
 	mov bl, 36
 	mul bl
 	add ax, [AliensPrintStartRow]
-	add ax, 0 ; Adjust alignment horizontally
-	
-	push [ExplosionFileHandle]
-	push ExplosionLength
-	push ExplosionHeight
+	sub ax, 4
+
+	push 36
+	push 24
 	push dx
 	push ax
-	push offset FileReadBuffer
-	call PrintBMP
+	push BlackColor
+	call PrintColor
 
 @@procEnd:
 	ret
