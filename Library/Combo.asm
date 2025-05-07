@@ -2,29 +2,25 @@
 ; This file implements the combo streak feature for alien kills.
 ;
 ; The combo should:
-;   - unlocks a skill after reaching a certain combo count
-;   - if streak reaches max (9x) then the ff consecutive hit is added to score.    
-;   - combo count is consumed upon use which is equivalent to the combo count 
+;   [ ] unlocks a skill after reaching a certain combo count   
+;   [ ] combo count is consumed upon use which is equivalent to the combo count 
 ;     requirement of a skill
-;   - streak can reset (a) if the timer runs out or (b) if bullet missed
-;     and hits the boundaries of screen
-;
-; Checklist:
-;   [/] cmp if COMBO_VAL = COMBO_MAX, if yes stops, otherwise continue incrementing
-;   [/] should reset to 0 if player killed 
-;   [ ] or hits boundaries, using COMBO_ACTIVE
-;   [/] combo after 9x should be added to score +1 +1 ... sa score
 ; 
+;	Issues:
+;		- Combo resets when bullets 'passed through' aliens
 ; -----------------------------------------------------------
 
 DATASEG
 	COMBO_STRING    db  '| ', '$' ; label
 
-    COMBO_ACTIVE db 0       ; sets state of combo
-    COMBO_VAL       db  ?   ; where combo count is stored
-    COMBO_MAX       db  3   ; set combo cap to 9
+	COMBO_ACTIVE 			db 	0   ; sets state of combo
+	COMBO_KILL_COUNT	db 	?		; kill count for combo trigger
+	COMBO_TRIGGER			db 	1		; sets the no. of kill count should the combo trigger 
+	COMBO_VAL       	db  ?   ; where combo value is stored
+	COMBO_MAX       	db  9   ; set combo cap to 9
 
 CODESEG
+
 ;--------------------------------------------------------------------
 ; Display the combo label on screen
 ;--------------------------------------------------------------------
@@ -49,13 +45,13 @@ proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 	mov dh, 23
 	mov dl, 37
 	mov ah, 2
-	int 10h         ; layout on screen
+	int 10h
 
 	xor ah, ah
 	mov al, [COMBO_VAL]
 
-@@ConvertComboValue:
-	add al, '0'   ; convert to ASCII
+@@ConvertComboValue: ; convert to ASCII
+	add al, '0'   
 	mov dl, al
 	mov ah, 2
 	int 21h               
@@ -65,19 +61,52 @@ proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 endp UpdateComboStat
 
 ;--------------------------------------------------------------------
-; Increments combo upon kill (not yet consecutive)
+; Validate combo state
+;--------------------------------------------------------------------
+
+proc ValidateCombo
+	xor ah, ah
+	mov al, [COMBO_KILL_COUNT]
+	cmp [COMBO_TRIGGER], al
+	je @@ActivateCombo	; if COMBO_KILL_COUNT = COMBO_TRIGGER, activate combo
+
+@@IncrementKillCount:
+	inc [byte ptr COMBO_KILL_COUNT]
+	ret
+
+@@ActivateCombo:
+	inc [byte ptr COMBO_ACTIVE]
+	call IncrementCombo
+	ret
+
+endp ValidateCombo
+
+;--------------------------------------------------------------------
+; Increments combo upon kill
 ;--------------------------------------------------------------------
 proc IncrementCombo ; called in Alien.asm, search word "#Jieco"
-    xor ah, ah
-    mov al, [COMBO_VAL]
-	cmp [COMBO_MAX], al ; check if COMBO_VAL has reached COMBO_MAX
-    je @@ComboMax       ; Jump if yes
+	xor ah, ah
+	mov al, [COMBO_VAL]
+	cmp [COMBO_MAX], al 
+	je @@ComboMax       ; if COMBO_VAL has reached COMBO_MAX, adds consecutive hits to score
 
 @@IncrementPhase:
-    inc [byte ptr COMBO_VAL]
-    ret
+	inc [byte ptr COMBO_VAL]
+	ret
 
 @@ComboMax:
-    inc [byte ptr Score]
-    ret
+	inc [byte ptr Score]
+	ret
+
 endp IncrementCombo
+
+;--------------------------------------------------------------------
+; Resets combo
+;--------------------------------------------------------------------
+
+proc ResetCombo
+	mov [byte ptr COMBO_VAL], 0
+	mov [byte ptr COMBO_KILL_COUNT], 0
+	mov [byte ptr COMBO_ACTIVE], 0
+	ret
+endp ResetCombo

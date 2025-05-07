@@ -8,7 +8,9 @@ DATASEG
 include "Library/Strings.asm"
 
 	DebugBool						db	0
-
+	FreezeActive					db	0    ; Freeze state flag
+	FreezeCounter					dw	0    ; Counter for freeze duration
+	
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
 ; -----------------------------------------------------------
@@ -287,7 +289,6 @@ proc MoveToStart
 	mov [byte ptr PlayerShootingExists], 0
 
 	mov [byte ptr AliensShootingCurrentAmount], 0
-
 
 	cld
 	push ds
@@ -581,10 +582,21 @@ proc PlayGame
     cmp ah, 4Dh ; Right
     je @@moveRight
 
+    cmp ah, 2Dh ; X key for freeze
+    je @@freezePressed
+
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
-	jmp @@readKey
+    jmp @@readKey
+
+@@freezePressed:
+    cmp [byte ptr FreezeActive], 1  ; Check if already frozen
+    je @@readKey
+    
+    mov [byte ptr FreezeActive], 1   ; Activate freeze
+    mov [word ptr FreezeCounter], 54 ; Set duration (3 seconds; 18 ticks/second)
+    jmp @@readKey
 
 @@regenerateHeart:
     cmp [LivesRemaining], 3 ; Max lives is 3
@@ -677,6 +689,9 @@ proc PlayGame
 	jmp @@clearShot
 
 @@removeShot:
+	call ResetCombo				; Resets combo #Jieco
+	call UpdateComboStat	; Reflect changes on screen 
+
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
 	mov [word ptr PlayerShootingRowLocation], 0
@@ -684,7 +699,6 @@ proc PlayGame
 @@clearShot:
 	push 2
 	call Delay
-
 
 	;Clear shot:
 	push ShootingLength
@@ -780,8 +794,8 @@ proc PlayGame
 	pop cx
 	loop @@blinkShooter
 
-	; reset combo #Jieco
-	mov [byte ptr COMBO_VAL], 0
+	; reset combo #Jieco 
+	call ResetCombo
 
 	;sub 5 score if possible, if he doesn't have 5 yet, just reset to 0:
 	cmp [byte ptr Score], 5
@@ -955,3 +969,40 @@ proc PlayGame
 
 	ret
 endp PlayGame
+
+proc CheckAndMoveAliens
+    cmp [byte ptr FreezeActive], 1
+    jne @@normalMovement
+    
+    dec [FreezeCounter]
+    cmp [FreezeCounter], 0
+    jne @@skipMovement   ; Skip movement while frozen
+    
+    mov [byte ptr FreezeActive], 0   ; Unfreeze when counter reaches 0
+
+@@normalMovement:
+    inc [byte ptr AliensLoopMoveCounter]
+    cmp [byte ptr AliensLoopMoveCounter], 4
+    jb @@skipMovement
+
+    mov [byte ptr AliensLoopMoveCounter], 0
+
+    ; Check if moving to right:
+    cmp [byte ptr AliensMoveRightBool], 1
+    jne @@moveLeft
+
+    call ClearAliens
+    call PrintAliens
+    call UpdateAliensLocation
+    mov [byte ptr AliensLoopMoveCounter], 0
+    jmp @@skipMovement
+
+@@moveLeft:
+    call ClearAliens
+    call PrintAliens
+    call UpdateAliensLocation
+    mov [byte ptr AliensLoopMoveCounter], 0
+
+@@skipMovement:
+    ret
+endp CheckAndMoveAliens
