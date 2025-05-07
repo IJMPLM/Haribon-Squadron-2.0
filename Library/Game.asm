@@ -592,11 +592,7 @@ proc PlayGame
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
-<<<<<<< HEAD
 	jmp @@printShooterAgain
-=======
-	jmp @@readKey
->>>>>>> pr-2
 
 @@regenerateHeart:
     cmp [LivesRemaining], 3 ; Max lives is 3
