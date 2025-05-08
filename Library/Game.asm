@@ -99,6 +99,8 @@ include "Library/Strings.asm"
 
 	FileReadBuffer					db	320 dup (?)
 
+	LaserEnabled	 				db 	?
+
 	;Color values:
 	BlackColor						equ	0
 	GreenColor						equ	30h
@@ -361,6 +363,8 @@ proc InitializeGame
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
+	mov [byte ptr LaserEnabled], 0
+
 
 	push offset ExplosionFileName
 	push offset ExplosionFileHandle
@@ -589,6 +593,9 @@ proc PlayGame
     cmp ah, 4Dh ; Right
     je @@moveRight
 
+	cmp ah, 2Dh ; X (Laser Enable)
+	je @@enableLaser
+
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
@@ -601,6 +608,10 @@ proc PlayGame
     inc [LivesRemaining]
     call UpdateLives
     jmp @@readKey
+
+@@enableLaser:
+	mov [byte ptr LaserEnabled], 1
+    je @@shootPressed
 
 @@moveLeft:
     cmp [word ptr ShooterRowLocation], 21
@@ -642,10 +653,8 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
-	;Check if shooting already exists in screen:
 	cmp [byte ptr PlayerShootingExists], 0
 	jne @@moveShootingUp
-
 	jmp @@clearShot
 
 @@shootPressed:	
@@ -666,22 +675,65 @@ proc PlayGame
 	mov [word ptr PlayerShootingRowLocation], ax
 
 	mov [byte ptr PlayerShootingExists], 1
-	jmp @@printShooting
 
-@@moveShootingUp:
-	cmp [word ptr PlayerBulletLineLocation], 10
-	jb @@removeShot
+	cmp [byte ptr LaserEnabled], 1
+	jne @@printShooting
 
-	sub [word ptr PlayerBulletLineLocation], 10
+	; Print laser
+	mov ax, [PlayerBulletLineLocation]  ; starting Y position
+	sub ax, 130                      ; Move up for height
+	mov [PlayerBulletLineLocation], ax   
+
+	push ShootingLength
+	push 140        ; height
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlueColor
+	call PrintColor
+	jmp @@clearShot
 
 @@printShooting:
+	; Regular shot printing
 	push ShootingLength
 	push ShootingHeight
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
 	push BlueColor
 	call PrintColor
+	jmp @@clearShot
 
+@@moveShootingUp:
+	cmp [word ptr PlayerBulletLineLocation], 10
+	jb @@removeShot
+
+	; Clear previous shot
+	push ShootingLength
+	mov ax, ShootingHeight
+	cmp [byte ptr LaserEnabled], 1
+	jne @@normalClearMove
+	mov ax, 140    ; Laser height
+@@normalClearMove:
+	push ax
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlackColor
+	call PrintColor
+
+	; Move shot up
+	sub [word ptr PlayerBulletLineLocation], 10
+
+	; Print new shot position
+	push ShootingLength
+	mov ax, ShootingHeight
+	cmp [byte ptr LaserEnabled], 1
+	jne @@normalPrintMove
+	mov ax, 140    ; Laser height
+@@normalPrintMove:
+	push ax
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlueColor
+	call PrintColor
 	jmp @@clearShot
 
 @@removeShot:
@@ -696,9 +748,14 @@ proc PlayGame
 	push 2
 	call Delay
 
-	;Clear shot:
+	; Clear shot with appropriate height
 	push ShootingLength
-	push ShootingHeight
+	mov ax, ShootingHeight
+	cmp [byte ptr LaserEnabled], 1
+	jne @@normalClear
+	mov ax, 140    ; Same height as laser
+@@normalClear:
+	push ax
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
 	push BlackColor
