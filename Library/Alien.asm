@@ -514,12 +514,12 @@ proc CheckAndHitAlien
     jmp @@procEnd
 
 @@hitAlien:
-    ; Calculate grid position for single alien hit
+    ; Calculate grid position and get target index (keep existing code)
     mov ax, [PlayerBulletLineLocation]
     sub ax, [AliensPrintStartLine]
     mov bl, 20
     div bl
-    mov ah, 0
+    mov ah, 0  
     mov bx, ax      ; Row number in bx
 
     mov ax, [PlayerShootingRowLocation]
@@ -533,12 +533,54 @@ proc CheckAndHitAlien
     mov bl, 8
     mul bl
     add al, cl
-    mov bl, al
-    xor bh, bh      ; Index in bx
+    mov bl, al      ; Target index in bl
+    xor bh, bh      
     
+    ; Check if AOE attack
+    cmp [byte ptr AOEEnabled], 1
+    jne @@normalKill
+
+    ; Kill center alien
+    push bx
+    call KillAlien
+    pop bx
+
+    ; Try kill right alien first if not rightmost
+    mov ax, bx
+    inc ax
+    test ax, 7      ; Check if would move to next row
+    jz @@tryLeft    ; If at edge, try left instead
+    
+    push bx
+    inc bx          ; Move to right alien
+    cmp [byte ptr AliensStatusArray + bx], 1
+    jne @@tryLeft   ; Try left if right alien is dead
+    call KillAlien  ; Kill right alien if exists
+    pop bx
+    jmp @@aoeComplete
+
+@@tryLeft:
+    pop bx          ; Restore index if we pushed it
+    ; Try kill left alien if not leftmost
+    test bl, 7      ; Check if at leftmost position
+    jz @@aoeComplete
+    
+    push bx 
+    dec bx          ; Move to left alien
+    cmp [byte ptr AliensStatusArray + bx], 1
+    jne @@skipLeft
+    call KillAlien  ; Kill left alien if exists
+@@skipLeft:
+    pop bx
+
+@@aoeComplete:
+    mov [byte ptr AOEEnabled], 0
+    jmp @@removeShot
+
+@@normalKill:
     call KillAlien
 
-    ; Remove bullet after hit
+@@removeShot:
     mov [byte ptr PlayerShootingExists], 0
     mov [word ptr PlayerBulletLineLocation], 0
     mov [word ptr PlayerShootingRowLocation], 0

@@ -100,6 +100,7 @@ include "Library/Strings.asm"
 	FileReadBuffer					db	320 dup (?)
 
 	LaserEnabled	 				db 	?
+	AOEEnabled						db	0
 
 	;Color values:
 	BlackColor						equ	0
@@ -596,6 +597,9 @@ proc PlayGame
 	cmp ah, 2Dh ; X (Laser Enable)
 	je @@enableLaser
 
+	cmp ah, 2Fh ; V (AOE Enable) 
+	je @@enableAOE
+
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
@@ -611,6 +615,10 @@ proc PlayGame
 
 @@enableLaser:
 	mov [byte ptr LaserEnabled], 1
+    je @@shootPressed
+
+@@enableAOE:
+	mov [byte ptr AOEEnabled], 1
     je @@shootPressed
 
 @@moveLeft:
