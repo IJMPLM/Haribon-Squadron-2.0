@@ -44,7 +44,9 @@ proc PrintAliens
 	jne @@skipAlien
 
 	
-	;Print Alien:
+	;Print Alien (check for freeze first):
+	cmp [byte ptr FreezeActive], 1
+	je @@printFreezeAlien
 	push [word ptr AlienFileHandle]
 	push AlienLength
 	push AlienHeight
@@ -52,6 +54,17 @@ proc PrintAliens
 	push [word ptr bp - 4]
 	push offset FileReadBuffer
 	call PrintBMP
+	jmp @@skipAlien
+
+@@printFreezeAlien:
+	push [word ptr FAlienFileHandle]
+	push FAlienLength
+	push FAlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
+
 
 @@skipAlien:
 	pop bx
@@ -619,6 +632,26 @@ proc CheckAndHitAlien
 
 	mov [byte ptr AliensStatusArray + bx], 0
 	dec [byte ptr AliensLeftAmount]
+
+	;Splatter Printing Start
+	push [SplatterFileHandle]
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push 2
+	call Delay
+
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlackColor
+	call PrintColor
+	; Splatter Printing End
 
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
