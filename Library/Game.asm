@@ -614,24 +614,51 @@ proc PlayGame
     cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
     je @@readKey
     
+    cmp [byte ptr CAN_USE_INVINCIBLE], 0 ; Check if enough combo
+    je @@readKey
+    
     mov [byte ptr InvincibleActive], 1   ; Activate invincibility
     mov [word ptr InvincibleCounter], 90 ; Set duration (5 seconds)
+    
+    ; Reduce combo counter
+    mov al, [COMBO_VAL]
+    sub al, INVINCIBLE_COST
+    mov [COMBO_VAL], al
+    call UpdateComboStat
     jmp @@readKey
 
 @@freezePressed:
     cmp [byte ptr FreezeActive], 1  ; Check if already frozen
     je @@readKey
     
+    cmp [byte ptr CAN_USE_FREEZE], 0  ; Check if enough combo
+    je @@readKey
+    
     mov [byte ptr FreezeActive], 1   ; Activate freeze
-    mov [word ptr FreezeCounter], 54 ; Set duration (3 seconds; 18 ticks/second)
+    mov [word ptr FreezeCounter], 54 ; Set duration (3 seconds)
+    
+    ; Reduce combo counter
+    mov al, [COMBO_VAL]
+    sub al, FREEZE_COST
+    mov [COMBO_VAL], al
+    call UpdateComboStat
     jmp @@readKey
 
 @@regenerateHeart:
     cmp [LivesRemaining], 3 ; Max lives is 3
     jae @@readKey
+    
+    cmp [byte ptr CAN_USE_REGEN], 0  ; Check if enough combo
+    je @@readKey
 
     inc [LivesRemaining]
     call UpdateLives
+    
+    ; Reduce combo counter
+    mov al, [COMBO_VAL]
+    sub al, REGEN_COST
+    mov [COMBO_VAL], al
+    call UpdateComboStat
     jmp @@readKey
 
 @@moveLeft:
@@ -674,6 +701,9 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
+	; Check skill availability based on current combo
+    call CheckSkillAvailability
+
 	; Update invincibility counter if active
 	cmp [InvincibleCounter], 0
 	je @@checkPlayerShot
