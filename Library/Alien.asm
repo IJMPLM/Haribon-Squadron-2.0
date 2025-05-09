@@ -685,7 +685,7 @@ proc CheckAndHitAlien
 	mul bl
 	add ax, [AliensPrintStartRow]
 	sub ax, 4
-
+	
 	push 36
 	push 24
 	push dx

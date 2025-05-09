@@ -633,8 +633,11 @@ proc PlayGame
 
     ; Check which key was pressed:
     cmp ah, 1 ; Esc
-    je @@procEnd  ; Exit immediately on ESC
+    jne @@checkSpace
+    call ResetCombo     ; Reset combo when ESC is pressed
+    jmp @@procEnd
 
+@@checkSpace:    
     cmp ah, 39h ; Space
     je @@shootPressed
 
@@ -656,54 +659,50 @@ proc PlayGame
     jmp @@readKey
 
 @@invincibilityPressed:
+    call CheckSkillAvailability    ; Check if skills are available based on current combo
+    cmp [byte ptr CAN_USE_INVINCIBLE], 0  ; Check if we have enough combo for invincibility
+    je @@readKey                   ; If not enough combo, ignore key press
     cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
     je @@readKey
     
-    cmp [byte ptr CAN_USE_INVINCIBLE], 0 ; Check if enough combo
-    je @@readKey
-    
-    mov [byte ptr InvincibleActive], 1   ; Activate invincibility
-    mov [word ptr InvincibleCounter], 90 ; Set duration (5 seconds)
-    
-    ; Reduce combo counter
-    mov al, [COMBO_VAL]
-    sub al, INVINCIBLE_COST
-    mov [COMBO_VAL], al
-    call UpdateComboStat
+    ; Activate invincibility and reduce combo
+    mov [byte ptr InvincibleActive], 1   
+    mov [word ptr InvincibleCounter], 36 
+    sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
+    call UpdateComboStat          ; Update combo display
     jmp @@readKey
 
 @@freezePressed:
-    cmp [byte ptr FreezeActive], 1  ; Check if already frozen
+    call CheckSkillAvailability   
+    cmp [byte ptr CAN_USE_FREEZE], 0    ; Check if we have enough combo for freeze
+    je @@readKey                  ; If not enough combo, ignore key press
+    cmp [byte ptr FreezeActive], 1  
     je @@readKey
     
-    cmp [byte ptr CAN_USE_FREEZE], 0  ; Check if enough combo
-    je @@readKey
+    ; Activate freeze and reduce combo
+    mov [byte ptr FreezeActive], 1   
+    mov [word ptr FreezeCounter], 54
+    sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
+    call UpdateComboStat         ; Update combo display
+
+    ; Force redraw of aliens to show frozen state immediately
+    call ClearAliens
+    call PrintAliens
     
-    mov [byte ptr FreezeActive], 1   ; Activate freeze
-    mov [word ptr FreezeCounter], 54 ; Set duration (3 seconds)
-    
-    ; Reduce combo counter
-    mov al, [COMBO_VAL]
-    sub al, FREEZE_COST
-    mov [COMBO_VAL], al
-    call UpdateComboStat
     jmp @@readKey
 
 @@regenerateHeart:
+    call CheckSkillAvailability
+    cmp [byte ptr CAN_USE_REGEN], 0     ; Check if we have enough combo for heart regen
+    je @@readKey                  ; If not enough combo, ignore key press
     cmp [LivesRemaining], 3 ; Max lives is 3
     jae @@readKey
-    
-    cmp [byte ptr CAN_USE_REGEN], 0  ; Check if enough combo
-    je @@readKey
 
+    ; Regenerate heart and reduce combo
     inc [LivesRemaining]
+    sub [byte ptr COMBO_VAL], REGEN_COST ; Reduce combo by cost
+    call UpdateComboStat         ; Update combo display
     call UpdateLives
-    
-    ; Reduce combo counter
-    mov al, [COMBO_VAL]
-    sub al, REGEN_COST
-    mov [COMBO_VAL], al
-    call UpdateComboStat
     jmp @@readKey
 
 @@moveLeft:
@@ -784,8 +783,6 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
-	; Check skill availability based on current combo
-    call CheckSkillAvailability
 	; Update invincibility counter if active
 	cmp [InvincibleCounter], 0
 	je @@checkPlayerShot
@@ -979,10 +976,7 @@ proc PlayGame
 
 @@printDied:
 	call ClearScreen
-	; Reset combo on game over
-	call ResetCombo
-	
-	; Print a message when game is over:
+; Print a message when game is over:
 	call PrintBackground
 
 	mov ah, 2
@@ -1066,10 +1060,8 @@ proc PlayGame
 	jmp @@firstLevelPrint
 
 @@printWin:
-	; Reset combo on win
-	call ResetCombo
+; Print win message to user (finished 3 levels):
 
-	; Print win message to user (finished 3 levels):
 	call PrintBackground
 
 	mov ah, 2
@@ -1115,11 +1107,8 @@ proc PlayGame
 	call Delay
 
 @@procEnd:
-    ; Reset combo on ESC
-    call ResetCombo
-    
-    push [RShieldFileHandle]
-    call CloseFile
+	push [RShieldFileHandle]
+	call CloseFile
 
 	push [SShieldFileHandle]
 	call CloseFile

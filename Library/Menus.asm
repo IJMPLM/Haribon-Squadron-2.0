@@ -337,6 +337,10 @@ proc PrintMainMenu
 
 	jmp @@printHighScoreTable
 
+@@quitGame:
+	call ResetCombo     ; Reset combo counter when quitting
+	jmp @@printMenu
+
 @@printInstructions:
 	call playSoundMenu
 	call PrintInstructions
