@@ -77,14 +77,19 @@ include "Library/Strings.asm"
 	RShieldHeight					equ	16
 
 	HeartFileName					db	'Assets/Heart.bmp', 0
-	HeartFileHandle					dw	?
+	HeartFileHandle				dw	?
 	HeartLength						equ	16
 	HeartHeight						equ	16
 
-	LevelFileName					db 'Assets/level.bmp', 0
-	LevelFileHandle				dw ?
-	LevelLength						equ 16
-	LevelHeight						equ 16
+	SkillsFileName				db	'Assets/Skills.bmp', 0
+	SkillsFileHandle			dw	?
+	SkillsLength					equ 60	
+	SkillsHeight					equ 16	; 16 is max 
+
+	BatteryFileName				db	'Assets/Battery.bmp', 0
+	BatteryFileHandle			dw	?
+	BatteryLength					equ	32	; 32 is max
+	BatteryHeight					equ 16
 
 ; -----------------------------------------------------------
 ; Aliens and player locations, movements, shootings, etc...
@@ -121,22 +126,21 @@ include "Library/Strings.asm"
 
 	DidNotDieInLevelBool			db	?
 
-	; for level bmp:
-	; LevelPrintStartLine				equ 180 ; #Level
-	; LevelPrintStartRow				equ	10
-
 	LevelPrintStartLine				equ		23
 	LevelPrintStartRow				equ		2
 
 	LevelValPrintStartLine		equ 	23
 	LevelValPrintStartRow			equ 	7
 
-	HeartsPrintStartLine			equ	182
+	BatteryPrintStartLine			equ 180
+	BatteryPrintStartRow			equ 100
+
+	HeartsPrintStartLine			equ	182		; to be replaced
 	HeartsPrintStartRow				equ	75
 
-	SkillContPrintStartLine		equ		180
-	SkillContPrintStartRow		equ		10
-	
+	SkillsPrintStartLine		equ		180
+	SkillsPrintStartRow			equ		140
+
 	ScorePrintStartLine				equ		23
 	ScorePrintStartRow				equ		28
 
@@ -209,21 +213,21 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
-; @@printLevel:		; #Level
-; 	push offset LevelFileName
-; 	push offset LevelFileHandle	
-; 	call OpenFile
+@@printSkills:		; #Skills
+	push offset SkillsFileName
+	push offset SkillsFileHandle	
+	call OpenFile
 
-; 	push [LevelFileHandle]
-; 	push LevelLength
-; 	push LevelHeight
-; 	push LevelPrintStartLine
-; 	push LevelPrintStartRow
-; 	push offset FileReadBuffer
-; 	call PrintBMP
+	push [SkillsFileHandle]
+	push SkillsLength
+	push SkillsHeight
+	push SkillsPrintStartLine
+	push SkillsPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
 
-; 	push [LevelFileHandle]
-; 	call CloseFile
+	push [SkillsFileHandle]
+	call CloseFile
 
 	;Score label:
 	xor bh, bh
@@ -265,25 +269,41 @@ proc UpdateLives
 
 	mov bx, HeartsPrintStartRow
 
-@@printHeart:
-	push bx
-	push cx
+@@printBattery:
+	push offset BatteryFileName
+	push offset BatteryFileHandle	
+	call OpenFile
 
-	push [HeartFileHandle]
-	push HeartLength
-	push HeartHeight
-	push HeartsPrintStartLine
-	push bx
+	push [BatteryFileHandle]
+	push BatteryLength
+	push BatteryHeight
+	push BatteryPrintStartLine
+	push BatteryPrintStartRow
 	push offset FileReadBuffer
 	call PrintBMP
 
-	pop cx							; loops heart #Jieco
-	pop bx							; causes a bug when commented 
-	add bx, 20					;
-	loop @@printHeart		;
-
-	push [HeartFileHandle]
+	push [BatteryFileHandle]
 	call CloseFile
+
+; @@printHeart:
+; 	push bx
+; 	push cx
+
+; 	push [HeartFileHandle]
+; 	push HeartLength
+; 	push HeartHeight
+; 	push HeartsPrintStartLine
+; 	push bx
+; 	push offset FileReadBuffer
+; 	call PrintBMP
+
+; 	pop cx							; loops heart #Jieco
+; 	pop bx							; causes a bug when commented 
+; 	add bx, 20					;
+; 	loop @@printHeart		;
+
+; 	push [HeartFileHandle]
+; 	call CloseFile
 
 	ret
 endp UpdateLives
