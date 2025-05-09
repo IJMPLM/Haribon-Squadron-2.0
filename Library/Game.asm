@@ -633,7 +633,7 @@ proc PlayGame
 
     ; Check which key was pressed:
     cmp ah, 1 ; Esc
-    je @@procEnd
+    je @@procEnd  ; Exit immediately on ESC
 
     cmp ah, 39h ; Space
     je @@shootPressed
@@ -979,7 +979,10 @@ proc PlayGame
 
 @@printDied:
 	call ClearScreen
-; Print a message when game is over:
+	; Reset combo on game over
+	call ResetCombo
+	
+	; Print a message when game is over:
 	call PrintBackground
 
 	mov ah, 2
@@ -1063,8 +1066,10 @@ proc PlayGame
 	jmp @@firstLevelPrint
 
 @@printWin:
-; Print win message to user (finished 3 levels):
+	; Reset combo on win
+	call ResetCombo
 
+	; Print win message to user (finished 3 levels):
 	call PrintBackground
 
 	mov ah, 2
@@ -1110,8 +1115,11 @@ proc PlayGame
 	call Delay
 
 @@procEnd:
-	push [RShieldFileHandle]
-	call CloseFile
+    ; Reset combo on ESC
+    call ResetCombo
+    
+    push [RShieldFileHandle]
+    call CloseFile
 
 	push [SShieldFileHandle]
 	call CloseFile
