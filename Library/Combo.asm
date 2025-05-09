@@ -23,7 +23,7 @@ DATASEG
 CODESEG
 
 ;--------------------------------------------------------------------
-; Display the combo label on screen
+; Display the combo label on screen (unused)
 ;--------------------------------------------------------------------
 
 proc DisplayCombo ; called in Game.asm, search word "#Jieco"
@@ -44,7 +44,7 @@ endp DisplayCombo
 
 proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 	xor bh, bh
-	mov dh, 23
+	mov dh, 19
 	mov dl, 37
 	mov ah, 2
 	int 10h

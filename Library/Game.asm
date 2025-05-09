@@ -81,8 +81,14 @@ include "Library/Strings.asm"
 	HeartLength						equ	16
 	HeartHeight						equ	16
 
+	LevelFileName					db 'Assets/level.bmp', 0
+	LevelFileHandle				dw ?
+	LevelLength						equ 16
+	LevelHeight						equ 16
+
 ; -----------------------------------------------------------
 ; Aliens and player locations, movements, shootings, etc...
+; (Row = X, Line = Y)  
 ; -----------------------------------------------------------
 	AliensMoveRightBool				db	?
 	AliensMovesToSideDone			db	?
@@ -115,9 +121,28 @@ include "Library/Strings.asm"
 
 	DidNotDieInLevelBool			db	?
 
+	; for level bmp:
+	; LevelPrintStartLine				equ 180 ; #Level
+	; LevelPrintStartRow				equ	10
+
+	LevelPrintStartLine				equ		23
+	LevelPrintStartRow				equ		2
+
+	LevelValPrintStartLine		equ 	23
+	LevelValPrintStartRow			equ 	7
 
 	HeartsPrintStartLine			equ	182
-	HeartsPrintStartRow				equ	125
+	HeartsPrintStartRow				equ	75
+
+	SkillContPrintStartLine		equ		180
+	SkillContPrintStartRow		equ		10
+	
+	ScorePrintStartLine				equ		23
+	ScorePrintStartRow				equ		28
+
+	ScoreValPrintStartLine		equ 	23
+	ScoreValPrintStartRow			equ		35
+
 
 	StatsAreaBorderLine				equ	175
 
@@ -173,10 +198,10 @@ proc PrintStatsArea
 
 	;Print labels:
 
-	;Level label:
+	;Level label: 
 	xor bh, bh
-	mov dh, 23
-	mov dl, 1
+	mov dh, LevelPrintStartLine
+	mov dl, LevelPrintStartRow
 	mov ah, 2
 	int 10h
 
@@ -184,11 +209,26 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
+; @@printLevel:		; #Level
+; 	push offset LevelFileName
+; 	push offset LevelFileHandle	
+; 	call OpenFile
+
+; 	push [LevelFileHandle]
+; 	push LevelLength
+; 	push LevelHeight
+; 	push LevelPrintStartLine
+; 	push LevelPrintStartRow
+; 	push offset FileReadBuffer
+; 	call PrintBMP
+
+; 	push [LevelFileHandle]
+; 	call CloseFile
 
 	;Score label:
 	xor bh, bh
-	mov dh, 23
-	mov dl, 24 ; 29
+	mov dh, ScorePrintStartLine
+	mov dl, ScorePrintStartRow
 	mov ah, 2
 	int 10h
 
@@ -197,7 +237,7 @@ proc PrintStatsArea
 	int 21h
 
 	;Combo label #Jieco:
-	call DisplayCombo
+	; call DisplayCombo
 
 	ret
 endp PrintStatsArea
@@ -237,10 +277,10 @@ proc UpdateLives
 	push offset FileReadBuffer
 	call PrintBMP
 
-	pop cx
-	pop bx
-	add bx, 20
-	loop @@printHeart
+	pop cx							; loops heart #Jieco
+	pop bx							; causes a bug when commented 
+	add bx, 20					;
+	loop @@printHeart		;
 
 	push [HeartFileHandle]
 	call CloseFile
@@ -254,8 +294,8 @@ endp UpdateLives
 ;--------------------------------------------------------------------
 proc UpdateScoreStat
 	xor bh, bh
-	mov dh, 23
-	mov dl, 31
+	mov dh, ScoreValPrintStartLine
+	mov dl, ScoreValPrintStartRow
 	mov ah, 2
 	int 10h
 
@@ -282,8 +322,8 @@ endp UpdateScoreStat
 proc UpdatePlayerStats
 	;Update level:
 	xor bh, bh
-	mov dh, 23
-	mov dl, 8
+	mov dh, LevelValPrintStartLine
+	mov dl, LevelValPrintStartRow
 	mov ah, 2
 	int 10h
 
