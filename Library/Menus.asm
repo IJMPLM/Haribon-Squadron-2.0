@@ -129,7 +129,6 @@ proc PrintMainMenu
 
 	cmp al, 1
 	je @@printMenu
-	
 	call PlayGame
 
 	;try to open file, if missing it's ok:

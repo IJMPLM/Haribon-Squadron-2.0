@@ -643,7 +643,7 @@ proc PlayGame
     
     ; Activate invincibility and reduce combo
     mov [byte ptr InvincibleActive], 1   
-    mov [word ptr InvincibleCounter], 36 
+    mov [word ptr InvincibleCounter], 36 ; 2 seconds
     sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
     call UpdateComboStat          ; Update combo display
     jmp @@readKey

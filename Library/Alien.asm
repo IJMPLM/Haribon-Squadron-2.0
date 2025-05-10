@@ -903,6 +903,9 @@ proc CheckAndHitAlienSecondary
     mov [byte ptr AliensStatusArray + bx], 0
     dec [byte ptr AliensLeftAmount]
 
+    mov [byte ptr SecondaryShootingExists], 0
+    mov [word ptr SecondaryBulletLineLocation], 0
+    mov [word ptr SecondaryShootingRowLocation], 0
 	;Splatter Printing Start
 	push [SplatterFileHandle]
 	push SplatterLength
