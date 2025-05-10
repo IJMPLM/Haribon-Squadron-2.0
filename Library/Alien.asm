@@ -691,3 +691,201 @@ KillAlien:
 	pop ax
 	pop bp
 	ret
+	
+
+; ------------------------------------------------
+; Checks if an Alien was hit by secondary shot
+; If true, Alien is marked as 'hit' and removed
+; ------------------------------------------------
+proc CheckAndHitAlienSecondary
+    ; Check if Alien hit:
+    ; Check above:
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    dec dx
+    mov cx, [SecondaryShootingRowLocation]
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    ; Check below:
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    add dx, 4
+    mov cx, [SecondaryShootingRowLocation]
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    sub dx, 3
+    mov cx, [SecondaryShootingRowLocation]
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    ; Check from left
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    mov cx, [SecondaryShootingRowLocation]
+    dec cx
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    ; Check from right
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    mov cx, [SecondaryShootingRowLocation]
+    add cx, 2
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    jmp @@procEnd
+
+@@hitAlien:
+    call playSoundAlien
+
+	;set cursor to top left
+	xor bh, bh
+	xor dx, dx
+	mov ah, 2
+	int 10h
+    ; Calculate hit position
+    mov ax, [SecondaryBulletLineLocation]
+    sub ax, [AliensPrintStartLine]
+
+    cmp ax, 22
+    jb @@hitInLine0
+
+    cmp ax, 0FFE0h
+    ja @@hitInLine0
+
+    cmp ax, 42
+    jb @@hitInLine1
+
+    push 2
+    jmp @@checkhitRow
+
+@@hitInLine0:
+    push 0
+    jmp @@checkhitRow
+
+@@hitInLine1:
+    push 1
+
+@@checkhitRow:
+	cmp [byte ptr DebugBool], 1
+	jne @@skipLineDebugPrint
+
+; Print hit debug info (if used debug flag):
+	mov ah, 2
+	xor bh, bh
+	xor dx, dx
+	int 10h
+
+	mov dl, 'L'
+	int 21h
+
+	pop dx
+	push dx
+	add dl, 30h
+	mov ah, 2
+	int 21h
+
+@@skipLineDebugPrint:
+    mov ax, [SecondaryShootingRowLocation]
+    sub ax, [AliensPrintStartRow]
+    add ax, 2
+
+    cmp ax, 0FFE0h
+    jb @@setForRowFind
+
+    xor cx, cx
+    jmp @@rowFound
+
+@@setForRowFind:
+    xor cx, cx
+    mov dx, 28
+@@checkRow:
+    cmp ax, dx
+    jb @@rowFound
+
+    add dx, 36
+    inc cx
+    jmp @@checkRow
+
+@@rowFound:
+	cmp [byte ptr DebugBool], 1
+	jne @@skipRowDebugPrint
+
+	mov ah, 2
+	mov dl, 'R'
+	int 21h
+
+	mov dx, cx
+	add dl, 30h
+	int 21h
+
+@@skipRowDebugPrint:
+	pop bx
+	;bx holding line, cx holding row
+
+	shl bx, 3 ;multiply by 8
+	add bx, cx
+
+	push bx
+
+    mov [byte ptr AliensStatusArray + bx], 0
+    dec [byte ptr AliensLeftAmount]
+
+    mov [byte ptr SecondaryShootingExists], 0
+    mov [word ptr SecondaryBulletLineLocation], 0
+    mov [word ptr SecondaryShootingRowLocation], 0
+
+    ; Increase score
+    inc [byte ptr Score]
+    call UpdateScoreStat
+
+	pop ax
+    ; Clear hit alien
+    mov bl, 8
+    div bl
+    push ax
+    xor ah, ah
+    mov bl, 20
+    mul bl
+
+    mov dx, ax
+    add dx, [AliensPrintStartLine]
+    sub dx, 4
+
+    pop ax
+    shr ax, 8
+    mov bl, 36
+    mul bl
+    add ax, [AliensPrintStartRow]
+    sub ax, 4
+
+    push 36
+    push 24
+    push dx
+    push ax
+    push BlackColor
+    call PrintColor
+
+@@procEnd:
+    ret
+endp CheckAndHitAlienSecondary

@@ -79,6 +79,10 @@ include "Library/Strings.asm"
 	PlayerBulletLineLocation 		dw	?
 	PlayerShootingRowLocation		dw	?
 
+	SecondaryShootingExists			db	?
+	SecondaryBulletLineLocation		dw	?
+	SecondaryShootingRowLocation	dw	?
+
 	AliensShootingMaxAmount		db	?
 	AliensShootingCurrentAmount	db	?
 	AliensShootingLineLocations	dw	10 dup (?)
@@ -603,7 +607,24 @@ proc PlayGame
     cmp ah, 2Ch ; Z (Regenerate Heart)
     je @@regenerateHeart
 
-	jmp @@printShooterAgain
+	cmp ah, 10h ; Q (Secondary Shot)
+    je @@secondaryShootPressed
+
+    jmp @@printShooterAgain
+
+@@secondaryShootPressed:
+    cmp [byte ptr SecondaryShootingExists], 0
+    jne @@printShooterAgain
+    call playSoundShoot
+
+    mov ax, ShooterLineLocation
+    sub ax, 6
+    mov [word ptr SecondaryBulletLineLocation], ax
+    mov ax, [ShooterRowLocation]
+    add ax, 7
+    mov [word ptr SecondaryShootingRowLocation], ax
+    mov [byte ptr SecondaryShootingExists], 1
+    jmp @@printShooterAgain
 
 @@regenerateHeart:
     cmp [LivesRemaining], 3 ; Max lives is 3
@@ -661,8 +682,45 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
+    ; Handle secondary shot movement and clearing
+    cmp [byte ptr SecondaryShootingExists], 1
+    jne @@checkMainShot
+    
+    ; Clear previous shot position
+    push ShootingLength
+    push ShootingHeight
+    push [word ptr SecondaryBulletLineLocation]
+    push [word ptr SecondaryShootingRowLocation]
+    push BlackColor
+    call PrintColor
+    
+    cmp [word ptr SecondaryBulletLineLocation], 10
+    jb @@removeSecondaryShot
+    
+    sub [word ptr SecondaryBulletLineLocation], 10
+    
+    ; Print new shot position
+    push ShootingLength
+    push ShootingHeight
+    push [word ptr SecondaryBulletLineLocation]
+    push [word ptr SecondaryShootingRowLocation]
+    push RedColor
+    call PrintColor
+    
+    ; Check for alien hits
+    call CheckAndHitAlienSecondary
+    jmp @@checkMainShot
+    
+@@removeSecondaryShot:
+    mov [byte ptr SecondaryShootingExists], 0
+    mov [word ptr SecondaryBulletLineLocation], 0
+    mov [word ptr SecondaryShootingRowLocation], 0
+
+@@checkMainShot:
+	;Check if shooting already exists in screen:
 	cmp [byte ptr PlayerShootingExists], 0
 	jne @@moveShootingUp
+
 	jmp @@clearShot
 
 @@shootPressed:	
