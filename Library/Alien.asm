@@ -581,6 +581,7 @@ proc CheckAndHitAlien
 
     ; Kill center alien
     push bx
+	mov [byte ptr AOEKillDirection], 0
     call KillAlien
     pop bx
 
@@ -594,6 +595,7 @@ proc CheckAndHitAlien
     inc bx          ; Move to right alien
     cmp [byte ptr AliensStatusArray + bx], 1
     jne @@tryLeft   ; Try left if right alien is dead
+	mov [byte ptr AOEKillDirection], 1
     call KillAlien  ; Kill right alien if exists
     pop bx
     jmp @@aoeComplete
@@ -608,12 +610,16 @@ proc CheckAndHitAlien
     dec bx          ; Move to left alien
     cmp [byte ptr AliensStatusArray + bx], 1
     jne @@skipLeft
+	mov [byte ptr AOEKillDirection], 2
     call KillAlien  ; Kill left alien if exists
 @@skipLeft:
     pop bx
 
 @@aoeComplete:
+	mov [byte ptr AOEKillDirection], 0
     mov [byte ptr AOEEnabled], 0
+	push 2
+	call Delay
     jmp @@removeShot
 
 @@normalKill:
@@ -670,6 +676,9 @@ proc CheckAndHitAlien
     jmp @@columnLoop
 
 @@columnCleared:
+	push 2
+	call Delay
+
     mov [byte ptr PlayerShootingExists], 0
     mov [word ptr PlayerBulletLineLocation], 0
     mov [word ptr PlayerShootingRowLocation], 0
@@ -694,11 +703,7 @@ KillAlien:
   
 	call UpdateComboStat 
 
-	;Increase and update score:
-	inc [byte ptr Score]
-	call UpdateScoreStat
-
-	;clear hit Alien print
+	;Calculate alien position
 	mov ax, bx
 	mov bl, 8
 	div bl
@@ -707,26 +712,41 @@ KillAlien:
 	mov bl, 20
 	mul bl
 
-	mov dx, ax
+	mov dx, ax      ;line position
 	add dx, [AliensPrintStartLine]
-	sub dx, 4
+	add dx, 5
 
 	pop ax
 	shr ax, 8
 	mov bl, 36
 	mul bl
-	add ax, [AliensPrintStartRow]
-	sub ax, 4
 
-	;Splatter Printing Start
+	mov ax, [word ptr PlayerShootingRowLocation]
+	cmp [byte ptr AOEKillDirection], 0
+	je @@noShift
+
+	cmp [byte ptr AOEKillDirection], 1
+	je @@shiftRight
+
+	cmp [byte ptr AOEKillDirection], 2
+	je @@shiftLeft
+
+@@shiftRight:
+	add ax, 36
+	jmp @@noShift
+
+@@shiftLeft:
+	sub ax, 36
+
+@@noShift:
+	;Splatter Printing at alien position
 	push [SplatterFileHandle]
 	push SplatterLength
 	push SplatterHeight
-	push [word ptr PlayerBulletLineLocation]
-	push [word ptr PlayerShootingRowLocation]
+	push dx
+	push ax
 	push offset FileReadBuffer
 	call PrintBMP
-	; Splatter Printing End
 	
 	pop dx
 	pop bx

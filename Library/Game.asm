@@ -69,6 +69,7 @@ include "Library/NAssets.asm"
 
 	LaserEnabled	 				db 	?
 	AOEEnabled						db	0
+	AOEKillDirection				db  0 ; 0 - None, 1 - Right, 2 - Left (For splatter)
 
 	;Color values:
 	BlackColor						equ	0
