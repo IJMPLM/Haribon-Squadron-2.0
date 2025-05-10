@@ -56,16 +56,6 @@ proc PrintAliens
 	call PrintBMP
 	jmp @@continueAlien
 
-@@printFreezeAlien:
-	push [word ptr FAlienFileHandle]
-	push FAlienLength
-	push FAlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
-
-
 @@printBlackAlien:
     ; Print black rectangle for dead aliens:
     push 42
@@ -78,6 +68,16 @@ proc PrintAliens
 	push ax
     push BlackColor
     call PrintColor
+	jmp @@continueAlien
+
+@@printFreezeAlien:
+	push [word ptr FAlienFileHandle]
+	push FAlienLength
+	push FAlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
 
 @@continueAlien:
     pop bx
