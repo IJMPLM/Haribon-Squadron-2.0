@@ -53,7 +53,7 @@ include "Library/NAssets.asm"
 	AliensShootingLineLocations	dw	10 dup (?)
 	AliensShootingRowLocations	dw	10 dup (?)
 
-	Score							db	?
+	Score							dw	?
 
 	LivesRemaining					db	?
 	Level							db	?
@@ -90,6 +90,7 @@ include "Library/NAssets.asm"
 
 	LaserEnabled	 				db 	?
 	AOEEnabled						db	0
+	AOEKillDirection				db  0 ; 0 - None, 1 - Right, 2 - Left (For splatter)
 
 	;Color values:
 	BlackColor						equ	0
@@ -275,7 +276,7 @@ proc UpdateScoreStat
 	int 10h
 
 	xor ah, ah
-	mov al, [Score]
+	mov ax, [Score]
 	push ax
 	call HexToDecimal
 
@@ -385,12 +386,40 @@ proc InitializeLevel
 
 @@checkLevelFive:
 	cmp [byte ptr Level], 5
-	jne @@setLevelSix
+	jne @@checkLevelSix
 
 	mov [byte ptr AliensShootingMaxAmount], 9
 	jmp @@resetDidNotDieBool
 
-@@setLevelSix:
+@@checkLevelSix:
+	cmp [byte ptr Level], 6
+	jne @@checkLevelSeven
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@checkLevelSeven:
+	cmp [byte ptr Level], 7
+	jne @@checkLevelEight
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@checkLevelEight:
+	cmp [byte ptr Level], 8
+	jne @@checkLevelNine
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@checkLevelNine:
+	cmp [byte ptr Level], 9
+	jne @@setLevelTen
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@setLevelTen:
 	mov [byte ptr AliensShootingMaxAmount], 10
 
 @@resetDidNotDieBool:
@@ -695,13 +724,13 @@ proc PlayGame
 	cmp ah, 2Fh ; V (AOE Enable) 
 	je @@enableAOE
 	
-    cmp ah, 2Ch ; Z (Freeze)
+    cmp ah, 2Ch ; Z (Freeze) CP: 5
     je @@freezePressed
 
-    cmp ah, 2Eh ; C (Invincibility)
+    cmp ah, 2Eh ; C (Invincibility) CP: 7
     je @@invincibilityPressed
 
-    cmp ah, 13h ; R (Regenerate Heart)
+    cmp ah, 13h ; R (Regenerate Heart) CP: 9
     je @@regenerateHeart
 
 	cmp ah, 10h ; Q (Secondary Shot)
@@ -771,12 +800,14 @@ proc PlayGame
     jmp @@readKey
 
 @@enableLaser:
+    cmp [byte ptr PlayerShootingExists], 0
+    jne @@printShooterAgain
 	mov [byte ptr LaserEnabled], 1
     je @@shootPressed
 
 @@enableAOE:
 	mov [byte ptr AOEEnabled], 1
-    je @@shootPressed
+    jmp @@printShooterAgain
 
 @@moveLeft:
     cmp [word ptr ShooterRowLocation], 21
@@ -1156,7 +1187,7 @@ proc PlayGame
 	int 21h
 	
 	xor ah, ah
-	mov al, [Score]
+	mov ax, [Score]
 	push ax
 	call HexToDecimal
 
@@ -1204,7 +1235,7 @@ proc PlayGame
 
 @@SkipPerfectLevelBonus:
 
-	cmp [byte ptr Level], 6 ; maximum level
+	cmp [byte ptr Level], 9 ; maximum level is now 9
 	je @@printWin
 
 
@@ -1215,6 +1246,7 @@ proc PlayGame
 	jmp @@firstLevelPrint
 
 @@printWin:
+; Print win message to user (finished 6 levels):
 ; Print win message to user (finished 6 levels):
 
 	call PrintBackground
@@ -1241,7 +1273,7 @@ proc PlayGame
 	int 21h
 
 	xor ah, ah
-	mov al, [Score]
+	mov ax, [Score]
 	push ax
 	call HexToDecimal
 
