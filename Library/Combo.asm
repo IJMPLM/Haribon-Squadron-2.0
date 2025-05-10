@@ -1,12 +1,9 @@
 ; -----------------------------------------------------------
 ; This file implements the combo streak feature for alien kills.
-; 
-;	Bugs:
-;		- Combo resets when bullets 'passed through' aliens
-;		- When bullets collide, combo increments
 ; -----------------------------------------------------------
 
 DATASEG
+
 	COMBO_STRING    db  '| ', '$' ; label
 	COMBO_Y				equ	37
 	COMBO_X				equ 19
@@ -27,21 +24,56 @@ DATASEG
 	CAN_USE_INVINCIBLE db  0    ; Flag if invincibility is available
 	CAN_USE_FREEZE   	db  0    ; Flag if freeze is available
 
+	; Combo BMPs (add 2, 4, 6, 7, 8)
+	Combo1FileName				db	'Assets/9.bmp', 0
+	Combo1FileHandle			dw	?
+	Combo1Length					equ	16
+	Combo1Height					equ	16
+
+	Combo3FileName				db	'Assets/9.bmp', 0
+	Combo3FileHandle			dw	?
+	Combo3Length					equ	16
+	Combo3Height					equ	16
+	Combo3Height					equ	16
+
+	Combo5FileName				db	'Assets/9.bmp', 0
+	Combo5FileHandle			dw	?
+	Combo5Length					equ	16
+	Combo5Height					equ	16
+
+	Combo9FileName				db	'Assets/9.bmp', 0
+	Combo9FileHandle			dw	?
+	Combo9Length					equ	16
+	Combo9Height					equ	16
+	
+	ComboPrintStartLine		equ	149
+	ComboPrintStartRow		equ	285
+
 CODESEG
 
 ;--------------------------------------------------------------------
-; Display the combo label on screen (unused)
+; Display the combo label on screen
 ;--------------------------------------------------------------------
 
 proc DisplayCombo ; called in Game.asm, search word "#Jieco"
-	xor bh, bh
-	mov dh, COMBO_Y
-	mov dl, COMBO_X
-	mov ah, 2
-	int 10h
-	mov ah, 9
-	mov dx, offset COMBO_STRING
-	int 21h
+@printCombo1:
+	push offset Combo1FileName
+	push offset Combo1FileHandle	
+	call OpenFile
+
+	push [Combo1FileHandle]
+	push Combo1Length
+	push Combo1Height
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo1FileHandle]
+	call CloseFile
+
+@printCombo2:
+
 	ret
 endp DisplayCombo
 

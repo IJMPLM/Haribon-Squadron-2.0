@@ -102,7 +102,7 @@ include "Library/NAssets.asm"
 CODESEG
 include "Library/Alien.asm"
 include "Library/Procs.asm"
-include "Library/Combo.asm" ; #Jieco
+include "Library/Combo.asm"
 
 ; -----------------------------------------------------------
 ; Prints the background image of the game (space background)
@@ -212,8 +212,8 @@ proc PrintStatsArea
 	mov dx, offset ScoreString
 	int 21h
 
-	;Combo label #Jieco:
-	; call DisplayCombo ; yung ":" lang to
+	;Combo label #Jieco
+	call DisplayCombo ; yung ":" lang to
 
 	ret
 endp PrintStatsArea
