@@ -7,6 +7,9 @@ Main.asm
 Game.asm
     include "Strings.asm"
     include "Aliens.asm"
+    include "Database.asm"
+    include "NAssets.asm"
+    include "GAssets.asm"
     include "Procs.asm"
 
 Procs.asm

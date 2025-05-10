@@ -19,6 +19,16 @@ DATASEG
 	COMBO_VAL       	db  ?   ; where combo value is stored
 	COMBO_MAX       	db  9   ; set combo cap to 9
 
+	; Skill costs
+	REGEN_COST      	equ 9    ; Cost for heart regeneration
+	INVINCIBLE_COST 	equ 7    ; Cost for invincibility
+	FREEZE_COST     	equ 5    ; Cost for freeze
+
+	; Skill availability flags  
+	CAN_USE_REGEN    	db  0    ; Flag if regen is available
+	CAN_USE_INVINCIBLE db  0    ; Flag if invincibility is available
+	CAN_USE_FREEZE   	db  0    ; Flag if freeze is available
+
 CODESEG
 
 ;--------------------------------------------------------------------
@@ -54,7 +64,7 @@ proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 	add al, '0'   
 	mov dl, al
 	mov ah, 2
-	int 21h               
+	int 21h
 
 @@EndUpdateCombo:
 	ret
@@ -110,3 +120,38 @@ proc ResetCombo
 	mov [byte ptr COMBO_ACTIVE], 0
 	ret
 endp ResetCombo
+
+;--------------------------------------------------------------------
+; Check which skills are available based on current combo value
+;--------------------------------------------------------------------
+proc CheckSkillAvailability
+    ; Check Regen Heart availability
+    mov al, [COMBO_VAL]
+    cmp al, REGEN_COST
+    jae @@canRegen
+    mov [byte ptr CAN_USE_REGEN], 0
+    jmp @@checkInvincible
+@@canRegen:
+    mov [byte ptr CAN_USE_REGEN], 1
+
+@@checkInvincible:
+    mov al, [COMBO_VAL]
+    cmp al, INVINCIBLE_COST
+    jae @@canInvincible
+    mov [byte ptr CAN_USE_INVINCIBLE], 0
+    jmp @@checkFreeze
+@@canInvincible:
+    mov [byte ptr CAN_USE_INVINCIBLE], 1
+
+@@checkFreeze:
+    mov al, [COMBO_VAL]
+    cmp al, FREEZE_COST
+    jae @@canFreeze
+    mov [byte ptr CAN_USE_FREEZE], 0
+    jmp @@endCheck
+@@canFreeze:
+    mov [byte ptr CAN_USE_FREEZE], 1
+
+@@endCheck:
+    ret
+endp CheckSkillAvailability

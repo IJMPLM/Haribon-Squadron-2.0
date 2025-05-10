@@ -6,6 +6,9 @@
 
 DATASEG
 include "Library/Strings.asm"
+include "Library/Database.asm"
+include "Library/GAssets.asm"
+include "Library/NAssets.asm"
 
 	DebugBool						db	0
 
@@ -13,50 +16,11 @@ include "Library/Strings.asm"
 ; Accessing bitmap files and text files for the game assets
 ; -----------------------------------------------------------
 
-	RandomFileName					db	'Assets/Random.txt', 0
-	RandomFileHandle				dw	?
-
-	ScoresFileName					db	'Assets/Scores.txt', 0
-	ScoresFileHandle				dw	?
-
-	ScoreTableFileName				db	'Assets/ScoreTab.bmp', 0
-	ScoreTableFileHandle			dw	?
-
-	AskSaveFileName					db	'Assets/AskSave.bmp', 0
-	AskSaveFileHandle				dw	?
-
-	MainMenuFileName				db	'Assets/MainMenu.bmp',0
-	MainMenuFileHandle				dw	?
-
-	OpeningFileName					db	'Assets/Opening.bmp',0
-	OpeningFileHandle				dw	?
-
-	InstructionsFileName			db	'Assets/Instruct.bmp',0
-	InstructionsFileHandle			dw	?
-
-	AlienFileName					db	'Assets/Alien.bmp',0
-	AlienFileHandle					dw	?
-	AlienLength						equ	32
-	AlienHeight						equ	32
-
-	ExplosionFileName				db	'Assets/Explode.bmp',0
-	ExplosionFileHandle				dw	?
-	ExplosionLength					equ	32
-	ExplosionHeight					equ	32
-
-	SpaceBgFileName					db	'Assets/SpaceBg.bmp',0
-	SpaceBgFileHandle				dw	?
-
-	ShooterFileName					db	'Assets/Shooter.bmp', 0
-	ShooterFileHandle				dw	?
-	ShooterLength					equ	16
-	ShooterHeight					equ	16
-
-	HeartFileName					db	'Assets/Heart.bmp', 0
-	HeartFileHandle					dw	?
-	HeartLength						equ	16
-	HeartHeight						equ	16
-
+	FreezeActive					db	0    ; Freeze state flag
+	FreezeCounter					dw	0    ; Counter for freeze duration
+	InvincibleActive				db	0    ; Invincibility state flag
+	InvincibleCounter				dw	0    ; Counter for invincibility duration
+	
 ; -----------------------------------------------------------
 ; Aliens and player locations, movements, shootings, etc...
 ; -----------------------------------------------------------
@@ -385,6 +349,21 @@ endp InitializeGame
 ; If true, ax = 1. If not, ax = 0.
 ; ------------------------------------------------
 proc CheckIfPlayerDied
+	; Check invincibility first
+	cmp [byte ptr InvincibleActive], 1
+	je @@returnZero    ; If invincible, player can't be hit
+
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@normalCheck
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@returnZero
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@normalCheck:
 	xor ch, ch
 	mov cl, [AliensShootingCurrentAmount]
 	cmp cx, 0
@@ -504,8 +483,28 @@ proc PlayGame
 	push offset AlienFileHandle
 	call OpenFile
 
+	push offset FAlienFileName
+	push offset FAlienFileHandle
+	call OpenFile
+
+	push offset SplatterFileName
+	push offset SplatterFileHandle
+	call OpenFile
+
 	push offset ShooterFileName
 	push offset ShooterFileHandle
+	call OpenFile
+
+	push offset ShooterReloadFileName
+	push offset ShooterReloadFileHandle
+	call OpenFile
+
+	push offset SShieldFileName
+	push offset SShieldFileHandle
+	call OpenFile
+
+	push offset RShieldFileName
+	push offset RShieldFileHandle
 	call OpenFile
 
 	call InitializeGame
@@ -587,8 +586,11 @@ proc PlayGame
 
     ; Check which key was pressed:
     cmp ah, 1 ; Esc
-    je @@procEnd
+    jne @@checkSpace
+    call ResetCombo     ; Reset combo when ESC is pressed
+    jmp @@procEnd
 
+@@checkSpace:    
     cmp ah, 39h ; Space
     je @@shootPressed
 
@@ -603,8 +605,14 @@ proc PlayGame
 
 	cmp ah, 2Fh ; V (AOE Enable) 
 	je @@enableAOE
+	
+    cmp ah, 2Ch ; Z (Freeze)
+    je @@freezePressed
 
-    cmp ah, 2Ch ; Z (Regenerate Heart)
+    cmp ah, 2Eh ; C (Invincibility)
+    je @@invincibilityPressed
+
+    cmp ah, 13h ; R (Regenerate Heart)
     je @@regenerateHeart
 
 	cmp ah, 10h ; Q (Secondary Shot)
@@ -626,11 +634,50 @@ proc PlayGame
     mov [byte ptr SecondaryShootingExists], 1
     jmp @@printShooterAgain
 
+@@invincibilityPressed:
+    call CheckSkillAvailability    ; Check if skills are available based on current combo
+    cmp [byte ptr CAN_USE_INVINCIBLE], 0  ; Check if we have enough combo for invincibility
+    je @@readKey                   ; If not enough combo, ignore key press
+    cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
+    je @@readKey
+    
+    ; Activate invincibility and reduce combo
+    mov [byte ptr InvincibleActive], 1   
+    mov [word ptr InvincibleCounter], 36 
+    sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
+    call UpdateComboStat          ; Update combo display
+    jmp @@readKey
+
+@@freezePressed:
+    call CheckSkillAvailability   
+    cmp [byte ptr CAN_USE_FREEZE], 0    ; Check if we have enough combo for freeze
+    je @@readKey                  ; If not enough combo, ignore key press
+    cmp [byte ptr FreezeActive], 1  
+    je @@readKey
+    
+    ; Activate freeze and reduce combo
+    mov [byte ptr FreezeActive], 1   
+    mov [word ptr FreezeCounter], 54
+    sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
+    call UpdateComboStat         ; Update combo display
+
+    ; Force redraw of aliens to show frozen state immediately
+    call ClearAliens
+    call PrintAliens
+    
+    jmp @@readKey
+
 @@regenerateHeart:
+    call CheckSkillAvailability
+    cmp [byte ptr CAN_USE_REGEN], 0     ; Check if we have enough combo for heart regen
+    je @@readKey                  ; If not enough combo, ignore key press
     cmp [LivesRemaining], 3 ; Max lives is 3
     jae @@readKey
 
+    ; Regenerate heart and reduce combo
     inc [LivesRemaining]
+    sub [byte ptr COMBO_VAL], REGEN_COST ; Reduce combo by cost
+    call UpdateComboStat         ; Update combo display
     call UpdateLives
     jmp @@readKey
 
@@ -673,9 +720,47 @@ proc PlayGame
     jmp @@printShooterAgain
 
 @@printShooterAgain:
+	cmp [byte ptr PlayerShootingExists], 1
+	je @@printReload
+	cmp [byte ptr InvincibleActive], 1
+	je @@printShield
+
+	; Regular Shooter Print if all above are false
 	push [ShooterFileHandle]
 	push ShooterLength
 	push ShooterHeight
+	push ShooterLineLocation
+	push [word ptr ShooterRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@checkShotStatus
+
+@@printShield:
+	push [SShieldFileHandle]
+	push SShieldLength
+	push RShieldHeight
+	push ShooterLineLocation
+	push [word ptr ShooterRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@checkShotStatus
+
+@@printReloadShield:
+	push [RShieldFileHandle]
+	push RShieldLength
+	push RShieldHeight
+	push ShooterLineLocation
+	push [word ptr ShooterRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@checkShotStatus
+
+@@printReload:
+	cmp [byte ptr InvincibleActive], 1
+	je @@printReloadShield
+	push [ShooterReloadFileHandle]
+	push ShooterReloadLength
+	push ShooterReloadHeight
 	push ShooterLineLocation
 	push [word ptr ShooterRowLocation]
 	push offset FileReadBuffer
@@ -710,6 +795,16 @@ proc PlayGame
     ; Check for alien hits
     call CheckAndHitAlienSecondary
     jmp @@checkMainShot
+	
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@checkMainShot
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@checkMainShot
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
     
 @@removeSecondaryShot:
     mov [byte ptr SecondaryShootingExists], 0
@@ -832,6 +927,7 @@ proc PlayGame
 
 	;Check if Alien hit:
 	call CheckAndHitAlien
+
 
 @@moveAliens:
 	call ClearAliensShots
@@ -1077,10 +1173,25 @@ proc PlayGame
 	call Delay
 
 @@procEnd:
+	push [RShieldFileHandle]
+	call CloseFile
+
+	push [SShieldFileHandle]
+	call CloseFile
+
+	push [ShooterReloadFileHandle]
+	call CloseFile
+
 	push [ShooterFileHandle]
 	call CloseFile
 
 	call playSoundMenu
+
+	push [SplatterFileHandle]
+	call CloseFile
+
+	push [FAlienFileHandle]
+	call CloseFile
 
 	push [AlienFileHandle]
 	call CloseFile

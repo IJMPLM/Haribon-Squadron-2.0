@@ -43,15 +43,28 @@ proc PrintAliens
     cmp [byte ptr AliensStatusArray + bx], 1
     jne @@printBlackAlien
 
-    ; Print Alien:
-    push [word ptr AlienFileHandle]
-    push AlienLength
-    push AlienHeight
-    push [word ptr bp - 2]
-    push [word ptr bp - 4] ; i want to make it more left
-    push offset FileReadBuffer
-    call PrintBMP
-    jmp @@continueAlien
+
+	;Print Alien (check for freeze first):
+	cmp [byte ptr FreezeActive], 1
+	je @@printFreezeAlien
+	push [word ptr AlienFileHandle]
+	push AlienLength
+	push AlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@continueAlien
+
+@@printFreezeAlien:
+	push [word ptr FAlienFileHandle]
+	push FAlienLength
+	push FAlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
+
 
 @@printBlackAlien:
     ; Print black rectangle for dead aliens:
@@ -197,22 +210,48 @@ endp UpdateAliensLocation
 ; When updated location is updated and Aliens are printed again
 ; ---------------------------------------------------------------
 proc CheckAndMoveAliens
-	cmp [byte ptr AliensLoopMoveCounter], 3
-	jne @@skipPrint
+    ; Check and update freeze state first
+    cmp [byte ptr FreezeActive], 1
+    jne @@checkMovement
+    
+    dec [FreezeCounter]
+    cmp [FreezeCounter], 0
+    jne @@skipAllMovement   ; Skip movement while frozen
+    
+    mov [byte ptr FreezeActive], 0   ; Unfreeze when counter reaches 0
 
-	;Move:
-	call ClearAliens
-	call PrintAliens
-	call UpdateAliensLocation
-	mov [byte ptr AliensLoopMoveCounter], 0
-	jmp @@procEnd
+@@checkMovement:
+    inc [byte ptr AliensLoopMoveCounter]
+    cmp [byte ptr AliensLoopMoveCounter], 4
+    jb @@skipAllMovement
 
-@@skipPrint:
-	inc [byte ptr AliensLoopMoveCounter]
+    mov [byte ptr AliensLoopMoveCounter], 0
 
-@@procEnd:
-	ret
+    ; Check if moving to right:
+    cmp [byte ptr AliensMoveRightBool], 1
+    jne @@moveLeft
+
+    ;Move:
+    call ClearAliens
+    call PrintAliens
+    call UpdateAliensLocation
+    mov [byte ptr AliensLoopMoveCounter], 0
+    jmp @@endProc
+
+@@moveLeft:
+    ;Move aliens left
+    call ClearAliens
+    call PrintAliens
+    call UpdateAliensLocation
+    mov [byte ptr AliensLoopMoveCounter], 0
+
+@@skipAllMovement:
+    ret
+
+@@endProc:
+    ret
 endp CheckAndMoveAliens
+
 
 ; -------------------------------------------------
 ; Choosing a random Alien to shoot
@@ -854,6 +893,29 @@ proc CheckAndHitAlienSecondary
     mov [byte ptr SecondaryShootingExists], 0
     mov [word ptr SecondaryBulletLineLocation], 0
     mov [word ptr SecondaryShootingRowLocation], 0
+	;Splatter Printing Start
+	push [SplatterFileHandle]
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push 2
+	call Delay
+
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlackColor
+	call PrintColor
+	; Splatter Printing End
+
+	mov [byte ptr PlayerShootingExists], 0
+	mov [word ptr PlayerBulletLineLocation], 0
+	mov [word ptr PlayerShootingRowLocation], 0
 
     ; Increase score
     inc [byte ptr Score]
@@ -872,19 +934,19 @@ proc CheckAndHitAlienSecondary
     add dx, [AliensPrintStartLine]
     sub dx, 4
 
-    pop ax
-    shr ax, 8
-    mov bl, 36
-    mul bl
-    add ax, [AliensPrintStartRow]
-    sub ax, 4
-
-    push 36
-    push 24
-    push dx
-    push ax
-    push BlackColor
-    call PrintColor
+	pop ax
+	shr ax, 8
+	mov bl, 36
+	mul bl
+	add ax, [AliensPrintStartRow]
+	sub ax, 4
+	
+	push 36
+	push 24
+	push dx
+	push ax
+	push BlackColor
+	call PrintColor
 
 @@procEnd:
     ret
