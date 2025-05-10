@@ -606,13 +606,13 @@ proc PlayGame
 	cmp ah, 2Fh ; V (AOE Enable) 
 	je @@enableAOE
 	
-    cmp ah, 2Ch ; Z (Freeze)
+    cmp ah, 2Ch ; Z (Freeze) CP: 5
     je @@freezePressed
 
-    cmp ah, 2Eh ; C (Invincibility)
+    cmp ah, 2Eh ; C (Invincibility) CP: 7
     je @@invincibilityPressed
 
-    cmp ah, 13h ; R (Regenerate Heart)
+    cmp ah, 13h ; R (Regenerate Heart) CP: 9
     je @@regenerateHeart
 
 	cmp ah, 10h ; Q (Secondary Shot)
@@ -682,6 +682,8 @@ proc PlayGame
     jmp @@readKey
 
 @@enableLaser:
+    cmp [byte ptr PlayerShootingExists], 0
+    jne @@printShooterAgain
 	mov [byte ptr LaserEnabled], 1
     je @@shootPressed
 
