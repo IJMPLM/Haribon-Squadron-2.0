@@ -718,12 +718,25 @@ KillAlien:
 	add ax, [AliensPrintStartRow]
 	sub ax, 4
 
-	; push 36
-	; push 24
-	; push ax
-	; push dx
-	; push BlueColor
-	; call PrintColor
+	;Splatter Printing Start
+	push [SplatterFileHandle]
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push 2
+	call Delay
+
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlackColor
+	call PrintColor
+	; Splatter Printing End
 	
 	pop dx
 	pop bx
@@ -890,15 +903,12 @@ proc CheckAndHitAlienSecondary
     mov [byte ptr AliensStatusArray + bx], 0
     dec [byte ptr AliensLeftAmount]
 
-    mov [byte ptr SecondaryShootingExists], 0
-    mov [word ptr SecondaryBulletLineLocation], 0
-    mov [word ptr SecondaryShootingRowLocation], 0
 	;Splatter Printing Start
 	push [SplatterFileHandle]
 	push SplatterLength
 	push SplatterHeight
-	push [word ptr PlayerBulletLineLocation]
-	push [word ptr PlayerShootingRowLocation]
+	push [word ptr SecondaryBulletLineLocation]
+	push [word ptr SecondaryShootingRowLocation]
 	push offset FileReadBuffer
 	call PrintBMP
 
@@ -907,15 +917,15 @@ proc CheckAndHitAlienSecondary
 
 	push SplatterLength
 	push SplatterHeight
-	push [word ptr PlayerBulletLineLocation]
-	push [word ptr PlayerShootingRowLocation]
+	push [word ptr SecondaryBulletLineLocation]
+	push [word ptr SecondaryShootingRowLocation]
 	push BlackColor
 	call PrintColor
 	; Splatter Printing End
 
-	mov [byte ptr PlayerShootingExists], 0
-	mov [word ptr PlayerBulletLineLocation], 0
-	mov [word ptr PlayerShootingRowLocation], 0
+	mov [byte ptr SecondaryShootingExists], 0
+	mov [word ptr SecondaryBulletLineLocation], 0
+	mov [word ptr SecondaryShootingRowLocation], 0
 
     ; Increase score
     inc [byte ptr Score]
