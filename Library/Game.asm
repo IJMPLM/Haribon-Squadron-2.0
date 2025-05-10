@@ -59,9 +59,29 @@ include "Library/NAssets.asm"
 
 	DidNotDieInLevelBool			db	?
 
+	LevelPrintStartLine				equ		23
+	LevelPrintStartRow				equ		2
 
-	HeartsPrintStartLine			equ	182
-	HeartsPrintStartRow				equ	125
+	LevelValPrintStartLine		equ 	23
+	LevelValPrintStartRow			equ 	7
+
+	BatteryPrintStartLine			equ 180
+	BatteryPrintStartRow			equ 100
+
+	BHealthPrintStartLine			equ 183
+	BHealthPrintStartRow			equ	103
+
+	HeartsPrintStartLine			equ	182		; to be replaced
+	HeartsPrintStartRow				equ	75
+
+	SkillsPrintStartLine		equ		180
+	SkillsPrintStartRow			equ		140
+
+	ScorePrintStartLine				equ		23
+	ScorePrintStartRow				equ		28
+
+	ScoreValPrintStartLine		equ 	23
+	ScoreValPrintStartRow			equ		35
 
 	StatsAreaBorderLine				equ	175
 

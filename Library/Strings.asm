@@ -5,7 +5,7 @@
 
 DATASEG
 	ScoreString				db	'Score: ', '$'
-	LevelString				db	'Level: ', '$'
+	LevelString				db	'Lvl: ', '$'
 
 	GameOverString			db	'Game Over !$'
 
