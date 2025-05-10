@@ -689,7 +689,7 @@ proc PlayGame
 
 @@enableAOE:
 	mov [byte ptr AOEEnabled], 1
-    je @@shootPressed
+    jmp @@printShooterAgain
 
 @@moveLeft:
     cmp [word ptr ShooterRowLocation], 21
