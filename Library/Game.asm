@@ -142,8 +142,8 @@ proc PrintStatsArea
 
 	;Level label:
 	xor bh, bh
-	mov dh, 23
-	mov dl, 1
+	mov dh, LevelPrintStartLine
+	mov dl, LevelPrintStartRow
 	mov ah, 2
 	int 10h
 
@@ -151,11 +151,58 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
+@@printSkills:		; #Skills
+	push offset SkillsFileName
+	push offset SkillsFileHandle	
+	call OpenFile
+
+	push [SkillsFileHandle]
+	push SkillsLength
+	push SkillsHeight
+	push SkillsPrintStartLine
+	push SkillsPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [SkillsFileHandle]
+	call CloseFile
+
+@@printBattery:
+	push offset BatteryFileName
+	push offset BatteryFileHandle	
+	call OpenFile
+
+	push [BatteryFileHandle]
+	push BatteryLength
+	push BatteryHeight
+	push BatteryPrintStartLine
+	push BatteryPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [BatteryFileHandle]
+	call CloseFile
+
+; @@printHealth:
+; 	push offset BHealthFileName
+; 	push offset BHealthFileHandle	
+; 	call OpenFile
+
+; 	push [BHealthFileHandle]
+; 	push BHealthLength
+; 	push BHealthHeight
+; 	push BHealthPrintStartLine
+; 	push BHealthPrintStartRow
+; 	push offset FileReadBuffer
+; 	call PrintBMP
+
+; 	push [BHealthFileHandle]
+; 	call CloseFile
 
 	;Score label:
 	xor bh, bh
-	mov dh, 23
-	mov dl, 24 ; 29
+	mov dh, ScorePrintStartLine
+	mov dl, ScorePrintStartRow
 	mov ah, 2
 	int 10h
 
@@ -164,7 +211,7 @@ proc PrintStatsArea
 	int 21h
 
 	;Combo label #Jieco:
-	call DisplayCombo
+	; call DisplayCombo
 
 	ret
 endp PrintStatsArea
@@ -175,41 +222,41 @@ endp PrintStatsArea
 ;----------------------------------------------
 proc UpdateLives
 	;Clear previous hearts:
-	push 64
-	push 14
-	push HeartsPrintStartLine
-	push HeartsPrintStartRow
-	push BlackColor
-	call PrintColor
+	; push 64											
+	; push 14
+	; push BHealthPrintStartLine
+	; push BHealthPrintStartRow
+	; push BlackColor
+	; call PrintColor
 
-	push offset HeartFileName
-	push offset HeartFileHandle
+	push offset BHealthFileName
+	push offset BHealthFileHandle
 	call OpenFile
 
 	;Print amount of lifes remaining:
 	xor ch, ch
 	mov cl, [LivesRemaining]
 
-	mov bx, HeartsPrintStartRow
+	mov bx, BHealthPrintStartRow
 
-@@printHeart:
+@@printBHealth:
 	push bx
 	push cx
 
-	push [HeartFileHandle]
-	push HeartLength
-	push HeartHeight
-	push HeartsPrintStartLine
+	push [BHealthFileHandle]
+	push BHealthLength
+	push BHealthHeight
+	push BHealthPrintStartLine
 	push bx
 	push offset FileReadBuffer
 	call PrintBMP
 
-	pop cx
-	pop bx
-	add bx, 20
-	loop @@printHeart
+	pop cx							
+	pop bx							
+	add bx, 8
+	loop @@printBHealth
 
-	push [HeartFileHandle]
+	push [BHealthFileHandle]
 	call CloseFile
 
 	ret
@@ -221,8 +268,8 @@ endp UpdateLives
 ;--------------------------------------------------------------------
 proc UpdateScoreStat
 	xor bh, bh
-	mov dh, 23
-	mov dl, 31
+	mov dh, ScoreValPrintStartLine
+	mov dl, ScoreValPrintStartRow
 	mov ah, 2
 	int 10h
 
@@ -249,8 +296,8 @@ endp UpdateScoreStat
 proc UpdatePlayerStats
 	;Update level:
 	xor bh, bh
-	mov dh, 23
-	mov dl, 8
+	mov dh, LevelValPrintStartLine
+	mov dl, LevelValPrintStartRow
 	mov ah, 2
 	int 10h
 
