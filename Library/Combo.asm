@@ -30,7 +30,7 @@ DATASEG
 CODESEG
 
 ;--------------------------------------------------------------------
-; Display the combo label on screen
+; Display the combo label on screen (unused)
 ;--------------------------------------------------------------------
 
 proc DisplayCombo ; called in Game.asm, search word "#Jieco"
@@ -48,6 +48,7 @@ endp DisplayCombo
 ;--------------------------------------------------------------------
 ; Updates the combo shown on screen
 ;--------------------------------------------------------------------
+
 proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 	xor bh, bh
 	mov dh, 19
@@ -92,6 +93,7 @@ endp ValidateCombo
 ;--------------------------------------------------------------------
 ; Increments combo upon kill
 ;--------------------------------------------------------------------
+
 proc IncrementCombo ; called in Alien.asm, search word "#Jieco"
 	xor ah, ah
 	mov al, [COMBO_VAL]
@@ -112,7 +114,7 @@ endp IncrementCombo
 ; Resets combo
 ;--------------------------------------------------------------------
 
-proc ResetCombo
+proc ResetCombo	; called in Game.asm, search word "#Jieco"
 	mov [byte ptr COMBO_VAL], 0
 	mov [byte ptr COMBO_KILL_COUNT], 0
 	mov [byte ptr COMBO_ACTIVE], 0

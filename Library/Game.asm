@@ -23,6 +23,7 @@ include "Library/NAssets.asm"
 	
 ; -----------------------------------------------------------
 ; Aliens and player locations, movements, shootings, etc...
+; (Row = X, Line = Y)  
 ; -----------------------------------------------------------
 	AliensMoveRightBool				db	?
 	AliensMovesToSideDone			db	?
@@ -140,7 +141,7 @@ proc PrintStatsArea
 
 	;Print labels:
 
-	;Level label:
+	;Level label: 
 	xor bh, bh
 	mov dh, LevelPrintStartLine
 	mov dl, LevelPrintStartRow
@@ -211,7 +212,7 @@ proc PrintStatsArea
 	int 21h
 
 	;Combo label #Jieco:
-	; call DisplayCombo
+	; call DisplayCombo ; yung ":" lang to
 
 	ret
 endp PrintStatsArea
