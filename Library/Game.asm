@@ -6,96 +6,21 @@
 
 DATASEG
 include "Library/Strings.asm"
+include "Library/Database.asm"
+include "Library/GAssets.asm"
+include "Library/NAssets.asm"
 
 	DebugBool						db	0
+
+; -----------------------------------------------------------
+; Accessing bitmap files and text files for the game assets
+; -----------------------------------------------------------
+
 	FreezeActive					db	0    ; Freeze state flag
 	FreezeCounter					dw	0    ; Counter for freeze duration
 	InvincibleActive				db	0    ; Invincibility state flag
 	InvincibleCounter				dw	0    ; Counter for invincibility duration
 	
-; -----------------------------------------------------------
-; Accessing bitmap files and text files for the game assets
-; -----------------------------------------------------------
-
-	RandomFileName					db	'Assets/Random.txt', 0
-	RandomFileHandle				dw	?
-
-	ScoresFileName					db	'Assets/Scores.txt', 0
-	ScoresFileHandle				dw	?
-
-	ScoreTableFileName				db	'Assets/ScoreTab.bmp', 0
-	ScoreTableFileHandle			dw	?
-
-	AskSaveFileName					db	'Assets/AskSave.bmp', 0
-	AskSaveFileHandle				dw	?
-
-	MainMenuFileName				db	'Assets/MainMenu.bmp',0
-	MainMenuFileHandle				dw	?
-
-	OpeningFileName					db	'Assets/Opening.bmp',0
-	OpeningFileHandle				dw	?
-
-	InstructionsFileName			db	'Assets/Instruct.bmp',0
-	InstructionsFileHandle			dw	?
-
-	AlienFileName					db	'Assets/Alien.bmp',0
-	AlienFileHandle					dw	?
-	AlienLength						equ	32
-	AlienHeight						equ	32
-
-	FAlienFileName					db	'Assets/FAlien.bmp',0
-	FAlienFileHandle				dw	?
-	FAlienLength					equ	32
-	FAlienHeight					equ	32
-
-	SplatterFileName				db	'Assets/Splatter.bmp',0
-	SplatterFileHandle				dw	?
-	SplatterLength					equ	8
-	SplatterHeight					equ	8
-
-	SpaceBgFileName					db	'Assets/SpaceBg.bmp',0
-	SpaceBgFileHandle				dw	?
-
-	ShooterFileName					db	'Assets/Shooter2.bmp', 0
-	ShooterFileHandle				dw	?
-	ShooterLength					equ	16
-	ShooterHeight					equ	16
-
-	ShooterReloadFileName			db	'Assets/Reload2.bmp', 0
-	ShooterReloadFileHandle			dw	?
-	ShooterReloadLength				equ	16
-	ShooterReloadHeight				equ	16
-
-	SShieldFileName					db	'Assets/SShield2.bmp', 0
-	SShieldFileHandle				dw	?
-	SShieldLength					equ	16
-	SShieldHeight					equ	16
-
-	RShieldFileName					db	'Assets/RShield2.bmp', 0
-	RShieldFileHandle				dw	?
-	RShieldLength					equ	16
-	RShieldHeight					equ	16
-
-	HeartFileName					db	'Assets/Heart.bmp', 0
-	HeartFileHandle				dw	?
-	HeartLength						equ	16
-	HeartHeight						equ	16
-
-	SkillsFileName				db	'Assets/Skills.bmp', 0
-	SkillsFileHandle			dw	?
-	SkillsLength					equ 60	
-	SkillsHeight					equ 16	; 16 is max 
-
-	BatteryFileName				db	'Assets/Battery.bmp', 0
-	BatteryFileHandle			dw	?
-	BatteryLength					equ	32	; 32 is max
-	BatteryHeight					equ 16
-
-	BHealthFileName				db	'Assets/BHealth.bmp', 0	
-	BHealthFileHandle			dw	?
-	BHealthLength					equ	7
-	BHealthHeight					equ	10
-
 ; -----------------------------------------------------------
 ; Aliens and player locations, movements, shootings, etc...
 ; (Row = X, Line = Y)  
@@ -118,6 +43,10 @@ include "Library/Strings.asm"
 	PlayerShootingExists			db	?
 	PlayerBulletLineLocation 		dw	?
 	PlayerShootingRowLocation		dw	?
+
+	SecondaryShootingExists			db	?
+	SecondaryBulletLineLocation		dw	?
+	SecondaryShootingRowLocation	dw	?
 
 	AliensShootingMaxAmount		db	?
 	AliensShootingCurrentAmount	db	?
@@ -158,6 +87,9 @@ include "Library/Strings.asm"
 	StatsAreaBorderLine				equ	175
 
 	FileReadBuffer					db	320 dup (?)
+
+	LaserEnabled	 				db 	?
+	AOEEnabled						db	0
 
 	;Color values:
 	BlackColor						equ	0
@@ -416,13 +348,34 @@ proc InitializeLevel
 
 @@checkLevelTwo:
 	cmp [byte ptr Level], 2
-	jne @@setLevelThree
+	jne @@checkLevelThree
 
 	mov [byte ptr AliensShootingMaxAmount], 5
 	jmp @@resetDidNotDieBool
 
-@@setLevelThree:
+@@checkLevelThree:
+	cmp [byte ptr Level], 3
+	jne @@checkLevelFour
+
 	mov [byte ptr AliensShootingMaxAmount], 7
+	jmp @@resetDidNotDieBool
+
+@@checkLevelFour:
+	cmp [byte ptr Level], 4
+	jne @@checkLevelFive
+
+	mov [byte ptr AliensShootingMaxAmount], 8
+	jmp @@resetDidNotDieBool
+
+@@checkLevelFive:
+	cmp [byte ptr Level], 5
+	jne @@setLevelSix
+
+	mov [byte ptr AliensShootingMaxAmount], 9
+	jmp @@resetDidNotDieBool
+
+@@setLevelSix:
+	mov [byte ptr AliensShootingMaxAmount], 10
 
 @@resetDidNotDieBool:
 	mov [byte ptr DidNotDieInLevelBool], 1 ;true
@@ -452,6 +405,12 @@ proc InitializeGame
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
+	mov [byte ptr LaserEnabled], 0
+
+
+	push offset ExplosionFileName
+	push offset ExplosionFileHandle
+	call OpenFile
 
 	call InitializeLevel
 
@@ -700,8 +659,11 @@ proc PlayGame
 
     ; Check which key was pressed:
     cmp ah, 1 ; Esc
-    je @@procEnd
+    jne @@checkSpace
+    call ResetCombo     ; Reset combo when ESC is pressed
+    jmp @@procEnd
 
+@@checkSpace:    
     cmp ah, 39h ; Space
     je @@shootPressed
 
@@ -711,45 +673,94 @@ proc PlayGame
     cmp ah, 4Dh ; Right
     je @@moveRight
 
-    cmp ah, 2Dh ; X key for freeze
+	cmp ah, 2Dh ; X (Laser Enable)
+	je @@enableLaser
+
+	cmp ah, 2Fh ; V (AOE Enable) 
+	je @@enableAOE
+	
+    cmp ah, 2Ch ; Z (Freeze)
     je @@freezePressed
 
-    cmp ah, 2Eh ; C key for invincibility
+    cmp ah, 2Eh ; C (Invincibility)
     je @@invincibilityPressed
 
-    cmp ah, 2Ch ; Z (Regenerate Heart)
+    cmp ah, 13h ; R (Regenerate Heart)
     je @@regenerateHeart
 
-    jmp @@readKey
+	cmp ah, 10h ; Q (Secondary Shot)
+    je @@secondaryShootPressed
+
+    jmp @@printShooterAgain
+
+@@secondaryShootPressed:
+    cmp [byte ptr SecondaryShootingExists], 0
+    jne @@printShooterAgain
+    call playSoundShoot
+
+    mov ax, ShooterLineLocation
+    sub ax, 6
+    mov [word ptr SecondaryBulletLineLocation], ax
+    mov ax, [ShooterRowLocation]
+    add ax, 7
+    mov [word ptr SecondaryShootingRowLocation], ax
+    mov [byte ptr SecondaryShootingExists], 1
+    jmp @@printShooterAgain
 
 @@invincibilityPressed:
+    call CheckSkillAvailability    ; Check if skills are available based on current combo
+    cmp [byte ptr CAN_USE_INVINCIBLE], 0  ; Check if we have enough combo for invincibility
+    je @@readKey                   ; If not enough combo, ignore key press
     cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
     je @@readKey
     
-    mov [byte ptr InvincibleActive], 1   ; Activate invincibility
-    mov [word ptr InvincibleCounter], 36 ; Set duration (2 seconds)
+    ; Activate invincibility and reduce combo
+    mov [byte ptr InvincibleActive], 1   
+    mov [word ptr InvincibleCounter], 36 ; 2 seconds
+    sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
+    call UpdateComboStat          ; Update combo display
     jmp @@readKey
 
 @@freezePressed:
-    cmp [byte ptr FreezeActive], 1  ; Check if already frozen
+    call CheckSkillAvailability   
+    cmp [byte ptr CAN_USE_FREEZE], 0    ; Check if we have enough combo for freeze
+    je @@readKey                  ; If not enough combo, ignore key press
+    cmp [byte ptr FreezeActive], 1  
     je @@readKey
     
-    mov [byte ptr FreezeActive], 1   ; Activate freeze
-    mov [word ptr FreezeCounter], 54 ; Set duration (3 seconds; 18 ticks/second)
+    ; Activate freeze and reduce combo
+    mov [byte ptr FreezeActive], 1   
+    mov [word ptr FreezeCounter], 54
+    sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
+    call UpdateComboStat         ; Update combo display
 
-	; Force redraw of aliens to show frozen state immediately
+    ; Force redraw of aliens to show frozen state immediately
     call ClearAliens
     call PrintAliens
     
     jmp @@readKey
 
 @@regenerateHeart:
+    call CheckSkillAvailability
+    cmp [byte ptr CAN_USE_REGEN], 0     ; Check if we have enough combo for heart regen
+    je @@readKey                  ; If not enough combo, ignore key press
     cmp [LivesRemaining], 3 ; Max lives is 3
     jae @@readKey
 
+    ; Regenerate heart and reduce combo
     inc [LivesRemaining]
+    sub [byte ptr COMBO_VAL], REGEN_COST ; Reduce combo by cost
+    call UpdateComboStat         ; Update combo display
     call UpdateLives
     jmp @@readKey
+
+@@enableLaser:
+	mov [byte ptr LaserEnabled], 1
+    je @@shootPressed
+
+@@enableAOE:
+	mov [byte ptr AOEEnabled], 1
+    je @@shootPressed
 
 @@moveLeft:
     cmp [word ptr ShooterRowLocation], 21
@@ -829,17 +840,51 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
+    ; Handle secondary shot movement and clearing
+    cmp [byte ptr SecondaryShootingExists], 1
+    jne @@checkMainShot
+    
+    ; Clear previous shot position
+    push ShootingLength
+    push ShootingHeight
+    push [word ptr SecondaryBulletLineLocation]
+    push [word ptr SecondaryShootingRowLocation]
+    push BlackColor
+    call PrintColor
+    
+    cmp [word ptr SecondaryBulletLineLocation], 10
+    jb @@removeSecondaryShot
+    
+    sub [word ptr SecondaryBulletLineLocation], 10
+    
+    ; Print new shot position
+    push ShootingLength
+    push ShootingHeight
+    push [word ptr SecondaryBulletLineLocation]
+    push [word ptr SecondaryShootingRowLocation]
+    push RedColor
+    call PrintColor
+    
+    ; Check for alien hits
+    call CheckAndHitAlienSecondary
+    jmp @@checkMainShot
+	
 	; Update invincibility counter if active
 	cmp [InvincibleCounter], 0
-	je @@checkPlayerShot
+	je @@checkMainShot
 	
 	dec [InvincibleCounter]
 	cmp [InvincibleCounter], 0
-	jne @@checkPlayerShot
+	jne @@checkMainShot
 	
 	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+    
+@@removeSecondaryShot:
+    mov [byte ptr SecondaryShootingExists], 0
+    mov [word ptr SecondaryBulletLineLocation], 0
+    mov [word ptr SecondaryShootingRowLocation], 0
 
-@@checkPlayerShot:
+@@checkMainShot:
 	;Check if shooting already exists in screen:
 	cmp [byte ptr PlayerShootingExists], 0
 	jne @@moveShootingUp
@@ -864,22 +909,65 @@ proc PlayGame
 	mov [word ptr PlayerShootingRowLocation], ax
 
 	mov [byte ptr PlayerShootingExists], 1
-	jmp @@printShooting
 
-@@moveShootingUp:
-	cmp [word ptr PlayerBulletLineLocation], 10
-	jb @@removeShot
+	cmp [byte ptr LaserEnabled], 1
+	jne @@printShooting
 
-	sub [word ptr PlayerBulletLineLocation], 10
+	; Print laser
+	mov ax, [PlayerBulletLineLocation]  ; starting Y position
+	sub ax, 130                      ; Move up for height
+	mov [PlayerBulletLineLocation], ax   
+
+	push ShootingLength
+	push 140        ; height
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlueColor
+	call PrintColor
+	jmp @@clearShot
 
 @@printShooting:
+	; Regular shot printing
 	push ShootingLength
 	push ShootingHeight
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
 	push BlueColor
 	call PrintColor
+	jmp @@clearShot
 
+@@moveShootingUp:
+	cmp [word ptr PlayerBulletLineLocation], 10
+	jb @@removeShot
+
+	; Clear previous shot
+	push ShootingLength
+	mov ax, ShootingHeight
+	cmp [byte ptr LaserEnabled], 1
+	jne @@normalClearMove
+	mov ax, 140    ; Laser height
+@@normalClearMove:
+	push ax
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlackColor
+	call PrintColor
+
+	; Move shot up
+	sub [word ptr PlayerBulletLineLocation], 10
+
+	; Print new shot position
+	push ShootingLength
+	mov ax, ShootingHeight
+	cmp [byte ptr LaserEnabled], 1
+	jne @@normalPrintMove
+	mov ax, 140    ; Laser height
+@@normalPrintMove:
+	push ax
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlueColor
+	call PrintColor
 	jmp @@clearShot
 
 @@removeShot:
@@ -894,9 +982,14 @@ proc PlayGame
 	push 2
 	call Delay
 
-	;Clear shot:
+	; Clear shot with appropriate height
 	push ShootingLength
-	push ShootingHeight
+	mov ax, ShootingHeight
+	cmp [byte ptr LaserEnabled], 1
+	jne @@normalClear
+	mov ax, 140    ; Same height as laser
+@@normalClear:
+	push ax
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
 	push BlackColor
@@ -1095,7 +1188,7 @@ proc PlayGame
 
 @@SkipPerfectLevelBonus:
 
-	cmp [byte ptr Level], 3 ; maximum level
+	cmp [byte ptr Level], 6 ; maximum level
 	je @@printWin
 
 
@@ -1106,7 +1199,7 @@ proc PlayGame
 	jmp @@firstLevelPrint
 
 @@printWin:
-; Print win message to user (finished 3 levels):
+; Print win message to user (finished 6 levels):
 
 	call PrintBackground
 
@@ -1174,6 +1267,9 @@ proc PlayGame
 	call CloseFile
 
 	push [AlienFileHandle]
+	call CloseFile
+
+	push [ExplosionFileHandle]
 	call CloseFile
 
 	ret
