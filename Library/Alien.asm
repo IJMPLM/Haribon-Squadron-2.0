@@ -374,32 +374,38 @@ proc UpdateAliensShots
 	je @@level5
 	cmp al, 6
 	je @@level6
+	cmp al, 7
+	je @@level7
+	cmp al, 8
+	je @@level8
+	cmp al, 9
+	je @@level9
 	; Default: Level 1
-	mov bx, 8
+	mov bx, 2
 	jmp @@setSpeed
 @@level2:
-	mov bx, 12
+	mov bx, 4
 	jmp @@setSpeed
 @@level3:
-	mov bx, 16
+	mov bx, 6
 	jmp @@setSpeed
 @@level4:
-	mov bx, 20
+	mov bx, 10
 	jmp @@setSpeed
 @@level5:
-	mov bx, 24
+	mov bx, 12
 	jmp @@setSpeed
 @@level6:
-	mov bx, 26
+	mov bx, 14
 	jmp @@setSpeed
 @@level7:
-	mov bx, 28
+	mov bx, 20
 	jmp @@setSpeed
 @@level8:
-	mov bx, 30
+	mov bx, 22
 	jmp @@setSpeed
 @@level9:
-	mov bx, 32
+	mov bx, 24
 @@setSpeed:
 
 	xor ch, ch
