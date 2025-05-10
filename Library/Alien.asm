@@ -362,14 +362,43 @@ proc UpdateAliensShots
 	cmp [byte ptr AliensShootingCurrentAmount], 0
 	je @@procEnd
 
+	; Determine bullet speed based on level
+	mov al, [Level]
+	cmp al, 2
+	je @@level2
+	cmp al, 3
+	je @@level3
+	cmp al, 4
+	je @@level4
+	cmp al, 5
+	je @@level5
+	cmp al, 6
+	je @@level6
+	; Default: Level 1
+	mov bx, 8
+	jmp @@setSpeed
+@@level2:
+	mov bx, 12
+	jmp @@setSpeed
+@@level3:
+	mov bx, 16
+	jmp @@setSpeed
+@@level4:
+	mov bx, 20
+	jmp @@setSpeed
+@@level5:
+	mov bx, 24
+	jmp @@setSpeed
+@@level6:
+	mov bx, 28
+@@setSpeed:
+
 	xor ch, ch
 	mov cl, [AliensShootingCurrentAmount]
 
 	xor di, di
-
 @@moveShooting:
-	add [word ptr AliensShootingLineLocations + di], 10
-
+	add [word ptr AliensShootingLineLocations + di], bx
 	add di, 2
 	loop @@moveShooting
 
@@ -379,7 +408,6 @@ proc UpdateAliensShots
 
 	;Remove shot:
 	mov [word ptr AliensShootingLineLocations], 0
-
 	mov [word ptr AliensShootingRowLocations], 0
 
 	;If it's the only shot, no need to move others in array:
@@ -397,7 +425,6 @@ proc UpdateAliensShots
 
 	mov cx, 9
 	rep movsw
-
 
 	mov si, offset AliensShootingRowLocations
 	mov di, si

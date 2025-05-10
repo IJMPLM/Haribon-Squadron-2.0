@@ -296,13 +296,34 @@ proc InitializeLevel
 
 @@checkLevelTwo:
 	cmp [byte ptr Level], 2
-	jne @@setLevelThree
+	jne @@checkLevelThree
 
 	mov [byte ptr AliensShootingMaxAmount], 5
 	jmp @@resetDidNotDieBool
 
-@@setLevelThree:
+@@checkLevelThree:
+	cmp [byte ptr Level], 3
+	jne @@checkLevelFour
+
 	mov [byte ptr AliensShootingMaxAmount], 7
+	jmp @@resetDidNotDieBool
+
+@@checkLevelFour:
+	cmp [byte ptr Level], 4
+	jne @@checkLevelFive
+
+	mov [byte ptr AliensShootingMaxAmount], 8
+	jmp @@resetDidNotDieBool
+
+@@checkLevelFive:
+	cmp [byte ptr Level], 5
+	jne @@setLevelSix
+
+	mov [byte ptr AliensShootingMaxAmount], 9
+	jmp @@resetDidNotDieBool
+
+@@setLevelSix:
+	mov [byte ptr AliensShootingMaxAmount], 10
 
 @@resetDidNotDieBool:
 	mov [byte ptr DidNotDieInLevelBool], 1 ;true
@@ -1115,7 +1136,7 @@ proc PlayGame
 
 @@SkipPerfectLevelBonus:
 
-	cmp [byte ptr Level], 3 ; maximum level
+	cmp [byte ptr Level], 6 ; maximum level
 	je @@printWin
 
 
@@ -1126,7 +1147,7 @@ proc PlayGame
 	jmp @@firstLevelPrint
 
 @@printWin:
-; Print win message to user (finished 3 levels):
+; Print win message to user (finished 6 levels):
 
 	call PrintBackground
 
