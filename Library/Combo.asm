@@ -1,17 +1,15 @@
 ; -----------------------------------------------------------
 ; This file implements the combo streak feature for alien kills.
-;
-; The combo should:
-;   [ ] unlocks a skill after reaching a certain combo count   
-;   [ ] combo count is consumed upon use which is equivalent to the combo count 
-;     requirement of a skill
 ; 
-;	Issues:
+;	Bugs:
 ;		- Combo resets when bullets 'passed through' aliens
+;		- When bullets collide, combo increments
 ; -----------------------------------------------------------
 
 DATASEG
 	COMBO_STRING    db  '| ', '$' ; label
+	COMBO_Y				equ	37
+	COMBO_X				equ 19
 
 	COMBO_ACTIVE 			db 	0   ; sets state of combo
 	COMBO_KILL_COUNT	db 	?		; kill count for combo trigger
@@ -32,13 +30,13 @@ DATASEG
 CODESEG
 
 ;--------------------------------------------------------------------
-; Display the combo label on screen
+; Display the combo label on screen (unused)
 ;--------------------------------------------------------------------
 
 proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	xor bh, bh
-	mov dh, 23
-	mov dl, 35
+	mov dh, COMBO_Y
+	mov dl, COMBO_X
 	mov ah, 2
 	int 10h
 	mov ah, 9
@@ -50,9 +48,10 @@ endp DisplayCombo
 ;--------------------------------------------------------------------
 ; Updates the combo shown on screen
 ;--------------------------------------------------------------------
+
 proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 	xor bh, bh
-	mov dh, 23
+	mov dh, 19
 	mov dl, 37
 	mov ah, 2
 	int 10h
@@ -94,6 +93,7 @@ endp ValidateCombo
 ;--------------------------------------------------------------------
 ; Increments combo upon kill
 ;--------------------------------------------------------------------
+
 proc IncrementCombo ; called in Alien.asm, search word "#Jieco"
 	xor ah, ah
 	mov al, [COMBO_VAL]
@@ -114,7 +114,7 @@ endp IncrementCombo
 ; Resets combo
 ;--------------------------------------------------------------------
 
-proc ResetCombo
+proc ResetCombo	; called in Game.asm, search word "#Jieco"
 	mov [byte ptr COMBO_VAL], 0
 	mov [byte ptr COMBO_KILL_COUNT], 0
 	mov [byte ptr COMBO_ACTIVE], 0

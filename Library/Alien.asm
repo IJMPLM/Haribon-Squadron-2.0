@@ -408,6 +408,7 @@ proc UpdateAliensShots
 	xor di, di
 @@moveShooting:
 	add [word ptr AliensShootingLineLocations + di], bx
+	add [word ptr AliensShootingLineLocations + di], bx
 	add di, 2
 	loop @@moveShooting
 

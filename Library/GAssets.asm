@@ -49,3 +49,18 @@ DATASEG
 	ExplosionFileHandle				dw	?
 	ExplosionLength					equ	32
 	ExplosionHeight					equ	32
+
+	SkillsFileName				db	'Assets/Skills.bmp', 0
+	SkillsFileHandle			dw	?
+	SkillsLength					equ 60	
+	SkillsHeight					equ 16	; 16 is max 
+
+	BatteryFileName				db	'Assets/Battery.bmp', 0
+	BatteryFileHandle			dw	?
+	BatteryLength					equ	32	; 32 is max
+	BatteryHeight					equ 16
+
+	BHealthFileName				db	'Assets/BHealth.bmp', 0	
+	BHealthFileHandle			dw	?
+	BHealthLength					equ	7
+	BHealthHeight					equ	10
