@@ -739,7 +739,7 @@ KillAlien:
 	
 	;Increase and update combo upon consecutive hit 
 	call ValidateCombo ; #Jieco
-  
+	call DisplayCombo
 	call UpdateComboStat 
 
 	;Calculate alien position
