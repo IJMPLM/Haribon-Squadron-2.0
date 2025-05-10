@@ -33,6 +33,7 @@ setVideoMode:
     int 10h
 
     call PrintOpening
+    call PrintOpening2
     call PrintMainMenu
 
     ;Set text mode back:

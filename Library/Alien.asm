@@ -40,10 +40,10 @@ proc PrintAliens
 
 	push bx
 
-	cmp [byte ptr AliensStatusArray + bx], 1
-	jne @@skipAlien
+    cmp [byte ptr AliensStatusArray + bx], 1
+    jne @@printBlackAlien
 
-	
+
 	;Print Alien (check for freeze first):
 	cmp [byte ptr FreezeActive], 1
 	je @@printFreezeAlien
@@ -54,7 +54,21 @@ proc PrintAliens
 	push [word ptr bp - 4]
 	push offset FileReadBuffer
 	call PrintBMP
-	jmp @@skipAlien
+	jmp @@continueAlien
+
+@@printBlackAlien:
+    ; Print black rectangle for dead aliens:
+    push 42
+    push AlienHeight
+	mov ax, [bp - 2]
+	sub ax, 3
+	push ax
+	mov ax, [bp - 4]
+	sub ax, 10
+	push ax
+    push BlackColor
+    call PrintColor
+	jmp @@continueAlien
 
 @@printFreezeAlien:
 	push [word ptr FAlienFileHandle]
@@ -65,10 +79,9 @@ proc PrintAliens
 	push offset FileReadBuffer
 	call PrintBMP
 
-
-@@skipAlien:
-	pop bx
-	inc bx
+@@continueAlien:
+    pop bx
+    inc bx
 
 	pop cx
 
@@ -476,96 +489,354 @@ endp ClearAliensShots
 ; If true, Alien is marked as 'hit' and removed
 ; ------------------------------------------------
 proc CheckAndHitAlien
-	;Check if Alien hit:
-	;Check above:
-	mov ah, 0Dh
-	mov dx, [PlayerBulletLineLocation]
-	dec dx
-	mov cx, [PlayerShootingRowLocation]
-	mov bh, 0
-	int 10h
+    ; Check if we should do column clear
+    cmp [byte ptr LaserEnabled], 1
+    jne @@normalHitDetection
+    jmp @@doColumnClear
 
-	cmp al, GreenColor
-	je @@hitAlien
+@@normalHitDetection:
+    ;Check if Alien hit:
+    ;Check above:
+    mov ah, 0Dh
+    mov dx, [PlayerBulletLineLocation]
+    dec dx
+    mov cx, [PlayerShootingRowLocation]
+    mov bh, 0
+    int 10h
 
-	;Check below:
-	mov ah, 0Dh
-	mov dx, [PlayerBulletLineLocation]
-	add dx, 4
-	mov cx, [PlayerShootingRowLocation]
-	mov bh, 0
-	int 10h
+    cmp al, GreenColor
+    je @@hitAlien
 
-	cmp al, GreenColor
-	je @@hitAlien
+    ;Check below:
+    mov ah, 0Dh
+    mov dx, [PlayerBulletLineLocation]
+    add dx, 4
+    mov cx, [PlayerShootingRowLocation]
+    mov bh, 0
+    int 10h
 
-	mov ah, 0Dh
-	mov dx, [PlayerBulletLineLocation]
-	sub dx, 3
-	mov cx, [PlayerShootingRowLocation]
-	mov bh, 0
-	int 10h
+    cmp al, GreenColor
+    je @@hitAlien
 
-	cmp al, GreenColor
-	je @@hitAlien
+    mov ah, 0Dh
+    mov dx, [PlayerBulletLineLocation]
+    sub dx, 3
+    mov cx, [PlayerShootingRowLocation]
+    mov bh, 0
+    int 10h
 
-	;Check from left
-	mov ah, 0Dh
-	mov dx, [PlayerBulletLineLocation]
-	mov cx, [PlayerShootingRowLocation]
-	dec cx
-	mov bh, 0
-	int 10h
+    cmp al, GreenColor
+    je @@hitAlien
 
-	cmp al, GreenColor
-	je @@hitAlien
+    ;Check from left
+    mov ah, 0Dh
+    mov dx, [PlayerBulletLineLocation]
+    mov cx, [PlayerShootingRowLocation]
+    dec cx
+    mov bh, 0
+    int 10h
 
-	;Check from right
-	mov ah, 0Dh
-	mov dx, [PlayerBulletLineLocation]
-	mov cx, [PlayerShootingRowLocation]
-	add cx, 2
-	mov bh, 0
-	int 10h
+    cmp al, GreenColor
+    je @@hitAlien
 
-	cmp al, GreenColor
-	je @@hitAlien
+    ;Check from right
+    mov ah, 0Dh
+    mov dx, [PlayerBulletLineLocation]
+    mov cx, [PlayerShootingRowLocation]
+    add cx, 2
+    mov bh, 0
+    int 10h
 
-	jmp @@procEnd
+    cmp al, GreenColor
+    je @@hitAlien
 
+    jmp @@procEnd
 
 @@hitAlien:
+    ; Calculate grid position and get target index (keep existing code)
+    mov ax, [PlayerBulletLineLocation]
+    sub ax, [AliensPrintStartLine]
+    mov bl, 20
+    div bl
+    mov ah, 0  
+    mov bx, ax      ; Row number in bx
 
-	;Play sound:
-	call playSoundAlien
+    mov ax, [PlayerShootingRowLocation]
+    sub ax, [AliensPrintStartRow]
+    mov cl, 36
+    div cl
+    mov cl, al      ; Column number in cl
+
+    ; Convert to alien array index
+    mov al, bl
+    mov bl, 8
+    mul bl
+    add al, cl
+    mov bl, al      ; Target index in bl
+    xor bh, bh      
+    
+    ; Check if AOE attack
+    cmp [byte ptr AOEEnabled], 1
+    jne @@normalKill
+
+    ; Kill center alien
+    push bx
+    call KillAlien
+    pop bx
+
+    ; Try kill right alien first if not rightmost
+    mov ax, bx
+    inc ax
+    test ax, 7      ; Check if would move to next row
+    jz @@tryLeft    ; If at edge, try left instead
+    
+    push bx
+    inc bx          ; Move to right alien
+    cmp [byte ptr AliensStatusArray + bx], 1
+    jne @@tryLeft   ; Try left if right alien is dead
+    call KillAlien  ; Kill right alien if exists
+    pop bx
+    jmp @@aoeComplete
+
+@@tryLeft:
+    pop bx          ; Restore index if we pushed it
+    ; Try kill left alien if not leftmost
+    test bl, 7      ; Check if at leftmost position
+    jz @@aoeComplete
+    
+    push bx 
+    dec bx          ; Move to left alien
+    cmp [byte ptr AliensStatusArray + bx], 1
+    jne @@skipLeft
+    call KillAlien  ; Kill left alien if exists
+@@skipLeft:
+    pop bx
+
+@@aoeComplete:
+    mov [byte ptr AOEEnabled], 0
+    jmp @@removeShot
+
+@@normalKill:
+    call KillAlien
+
+@@removeShot:
+    mov [byte ptr PlayerShootingExists], 0
+    mov [word ptr PlayerBulletLineLocation], 0
+    mov [word ptr PlayerShootingRowLocation], 0
+    jmp @@procEnd
+
+@@doColumnClear:
+    ; Column clear code (existing code)
+	mov [byte ptr LaserEnabled], ?
+    mov ax, [PlayerShootingRowLocation]
+    sub ax, [AliensPrintStartRow]
+    add ax, 2
+
+    xor cx, cx  ; column counter
+    mov dx, 28
+@@findColumn:
+    cmp ax, dx
+    jb @@columnFound
+    add dx, 36
+    inc cx
+    jmp @@findColumn
+
+@@columnFound:
+    ; Clear entire column
+    mov di, cx  ; Column number
+    xor si, si  ; Start from first row
+
+@@columnLoop:
+    cmp si, 3   ; Check if we've done all 3 rows
+    je @@columnCleared
+    
+    mov bx, si
+    shl bx, 3   ; multiply row by 8
+    add bx, di  ; Add column number
+    
+    ; Only kill if alien exists
+    cmp [byte ptr AliensStatusArray + bx], 1
+    jne @@nextAlien
+    
+    ; Kill alien at current position
+    push si
+    push di
+    call KillAlien
+    pop di
+    pop si
+    
+@@nextAlien:
+    inc si
+    jmp @@columnLoop
+
+@@columnCleared:
+    mov [byte ptr PlayerShootingExists], 0
+    mov [word ptr PlayerBulletLineLocation], 0
+    mov [word ptr PlayerShootingRowLocation], 0
+
+@@procEnd:
+    ret
+endp CheckAndHitAlien
+
+
+KillAlien:
+	push bp
+	mov bp, sp
+	push ax
+	push bx
+	push dx
+	
+	mov [byte ptr AliensStatusArray + bx], 0
+	dec [byte ptr AliensLeftAmount]
+	
+	;Increase and update combo upon consecutive hit 
+	call ValidateCombo ; #Jieco
+  
+	call UpdateComboStat 
+
+	;Increase and update score:
+	inc [byte ptr Score]
+	call UpdateScoreStat
+
+	;clear hit Alien print
+	mov ax, bx
+	mov bl, 8
+	div bl
+	push ax
+	xor ah, ah
+	mov bl, 20
+	mul bl
+
+	mov dx, ax
+	add dx, [AliensPrintStartLine]
+	sub dx, 4
+
+	pop ax
+	shr ax, 8
+	mov bl, 36
+	mul bl
+	add ax, [AliensPrintStartRow]
+	sub ax, 4
+
+	;Splatter Printing Start
+	push [SplatterFileHandle]
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push 2
+	call Delay
+
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlackColor
+	call PrintColor
+	; Splatter Printing End
+	
+	pop dx
+	pop bx
+	pop ax
+	pop bp
+	ret
+	
+
+; ------------------------------------------------
+; Checks if an Alien was hit by secondary shot
+; If true, Alien is marked as 'hit' and removed
+; ------------------------------------------------
+proc CheckAndHitAlienSecondary
+    ; Check if Alien hit:
+    ; Check above:
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    dec dx
+    mov cx, [SecondaryShootingRowLocation]
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    ; Check below:
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    add dx, 4
+    mov cx, [SecondaryShootingRowLocation]
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    sub dx, 3
+    mov cx, [SecondaryShootingRowLocation]
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    ; Check from left
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    mov cx, [SecondaryShootingRowLocation]
+    dec cx
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    ; Check from right
+    mov ah, 0Dh
+    mov dx, [SecondaryBulletLineLocation]
+    mov cx, [SecondaryShootingRowLocation]
+    add cx, 2
+    mov bh, 0
+    int 10h
+
+    cmp al, GreenColor
+    je @@hitAlien
+
+    jmp @@procEnd
+
+@@hitAlien:
+    call playSoundAlien
 
 	;set cursor to top left
 	xor bh, bh
 	xor dx, dx
 	mov ah, 2
 	int 10h
+    ; Calculate hit position
+    mov ax, [SecondaryBulletLineLocation]
+    sub ax, [AliensPrintStartLine]
 
-	mov ax, [PlayerBulletLineLocation]
-	sub ax, [AliensPrintStartLine]
+    cmp ax, 22
+    jb @@hitInLine0
 
-	cmp ax, 22
-	jb @@hitInLine0
+    cmp ax, 0FFE0h
+    ja @@hitInLine0
 
-	cmp ax, 0FFE0h
-	ja @@hitInLine0
+    cmp ax, 42
+    jb @@hitInLine1
 
-	cmp ax, 42
-	jb @@hitInLine1
-
-	push 2
-	jmp @@checkhitRow
+    push 2
+    jmp @@checkhitRow
 
 @@hitInLine0:
-	push 0
-	jmp @@checkhitRow
+    push 0
+    jmp @@checkhitRow
 
 @@hitInLine1:
-	push 1
+    push 1
 
 @@checkhitRow:
 	cmp [byte ptr DebugBool], 1
@@ -587,27 +858,26 @@ proc CheckAndHitAlien
 	int 21h
 
 @@skipLineDebugPrint:
-	mov ax, [PlayerShootingRowLocation]
-	sub ax, [AliensPrintStartRow]
-	add ax, 2
+    mov ax, [SecondaryShootingRowLocation]
+    sub ax, [AliensPrintStartRow]
+    add ax, 2
 
-	;In some rare cases startRow is bigger than shootingRow, check:
-	cmp ax, 0FFE0h
-	jb @@setForRowFind
+    cmp ax, 0FFE0h
+    jb @@setForRowFind
 
-	xor cx, cx
-	jmp @@rowFound
+    xor cx, cx
+    jmp @@rowFound
 
 @@setForRowFind:
-	xor cx, cx ;row counter
-	mov dx, 28
+    xor cx, cx
+    mov dx, 28
 @@checkRow:
-	cmp ax, dx
-	jb @@rowFound
+    cmp ax, dx
+    jb @@rowFound
 
-	add dx, 36
-	inc cx
-	jmp @@checkRow
+    add dx, 36
+    inc cx
+    jmp @@checkRow
 
 @@rowFound:
 	cmp [byte ptr DebugBool], 1
@@ -630,15 +900,18 @@ proc CheckAndHitAlien
 
 	push bx
 
-	mov [byte ptr AliensStatusArray + bx], 0
-	dec [byte ptr AliensLeftAmount]
+    mov [byte ptr AliensStatusArray + bx], 0
+    dec [byte ptr AliensLeftAmount]
 
+    mov [byte ptr SecondaryShootingExists], 0
+    mov [word ptr SecondaryBulletLineLocation], 0
+    mov [word ptr SecondaryShootingRowLocation], 0
 	;Splatter Printing Start
 	push [SplatterFileHandle]
 	push SplatterLength
 	push SplatterHeight
-	push [word ptr PlayerBulletLineLocation]
-	push [word ptr PlayerShootingRowLocation]
+	push [word ptr SecondaryBulletLineLocation]
+	push [word ptr SecondaryShootingRowLocation]
 	push offset FileReadBuffer
 	call PrintBMP
 
@@ -647,37 +920,32 @@ proc CheckAndHitAlien
 
 	push SplatterLength
 	push SplatterHeight
-	push [word ptr PlayerBulletLineLocation]
-	push [word ptr PlayerShootingRowLocation]
+	push [word ptr SecondaryBulletLineLocation]
+	push [word ptr SecondaryShootingRowLocation]
 	push BlackColor
 	call PrintColor
 	; Splatter Printing End
 
-	mov [byte ptr PlayerShootingExists], 0
-	mov [word ptr PlayerBulletLineLocation], 0
-	mov [word ptr PlayerShootingRowLocation], 0
+	mov [byte ptr SecondaryShootingExists], 0
+	mov [word ptr SecondaryBulletLineLocation], 0
+	mov [word ptr SecondaryShootingRowLocation], 0
 
-	;Increase and update combo upon consecutive hit 
-	call ValidateCombo ; #Jieco
-  
-	call UpdateComboStat 
-
-	;Increase and update score:
-	inc [byte ptr Score]
-	call UpdateScoreStat
+    ; Increase score
+    inc [byte ptr Score]
+    call UpdateScoreStat
 
 	pop ax
-	;clear hit Alien print
-	mov bl, 8
-	div bl
-	push ax
-	xor ah, ah
-	mov bl, 20
-	mul bl
+    ; Clear hit alien
+    mov bl, 8
+    div bl
+    push ax
+    xor ah, ah
+    mov bl, 20
+    mul bl
 
-	mov dx, ax
-	add dx, [AliensPrintStartLine]
-	sub dx, 4
+    mov dx, ax
+    add dx, [AliensPrintStartLine]
+    sub dx, 4
 
 	pop ax
 	shr ax, 8
@@ -694,5 +962,5 @@ proc CheckAndHitAlien
 	call PrintColor
 
 @@procEnd:
-	ret
-endp CheckAndHitAlien
+    ret
+endp CheckAndHitAlienSecondary
