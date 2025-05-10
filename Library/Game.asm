@@ -91,6 +91,11 @@ include "Library/Strings.asm"
 	BatteryLength					equ	32	; 32 is max
 	BatteryHeight					equ 16
 
+	BHealthFileName				db	'Assets/BHealth.bmp', 0	
+	BHealthFileHandle			dw	?
+	BHealthLength					equ	7
+	BHealthHeight					equ	10
+
 ; -----------------------------------------------------------
 ; Aliens and player locations, movements, shootings, etc...
 ; (Row = X, Line = Y)  
@@ -135,6 +140,9 @@ include "Library/Strings.asm"
 	BatteryPrintStartLine			equ 180
 	BatteryPrintStartRow			equ 100
 
+	BHealthPrintStartLine			equ 183
+	BHealthPrintStartRow			equ	103
+
 	HeartsPrintStartLine			equ	182		; to be replaced
 	HeartsPrintStartRow				equ	75
 
@@ -146,7 +154,6 @@ include "Library/Strings.asm"
 
 	ScoreValPrintStartLine		equ 	23
 	ScoreValPrintStartRow			equ		35
-
 
 	StatsAreaBorderLine				equ	175
 
@@ -229,46 +236,6 @@ proc PrintStatsArea
 	push [SkillsFileHandle]
 	call CloseFile
 
-	;Score label:
-	xor bh, bh
-	mov dh, ScorePrintStartLine
-	mov dl, ScorePrintStartRow
-	mov ah, 2
-	int 10h
-
-	mov ah, 9
-	mov dx, offset ScoreString
-	int 21h
-
-	;Combo label #Jieco:
-	; call DisplayCombo
-
-	ret
-endp PrintStatsArea
-
-
-;----------------------------------------------
-; Updates the amount of lives shown on screen
-;----------------------------------------------
-proc UpdateLives
-	;Clear previous hearts:
-	push 64
-	push 14
-	push HeartsPrintStartLine
-	push HeartsPrintStartRow
-	push BlackColor
-	call PrintColor
-
-	push offset HeartFileName
-	push offset HeartFileHandle
-	call OpenFile
-
-	;Print amount of lifes remaining:
-	xor ch, ch
-	mov cl, [LivesRemaining]
-
-	mov bx, HeartsPrintStartRow
-
 @@printBattery:
 	push offset BatteryFileName
 	push offset BatteryFileHandle	
@@ -285,25 +252,65 @@ proc UpdateLives
 	push [BatteryFileHandle]
 	call CloseFile
 
-; @@printHeart:
-; 	push bx
-; 	push cx
+	;Score label:
+	xor bh, bh
+	mov dh, ScorePrintStartLine
+	mov dl, ScorePrintStartRow
+	mov ah, 2
+	int 10h
 
-; 	push [HeartFileHandle]
-; 	push HeartLength
-; 	push HeartHeight
-; 	push HeartsPrintStartLine
-; 	push bx
-; 	push offset FileReadBuffer
-; 	call PrintBMP
+	mov ah, 9
+	mov dx, offset ScoreString
+	int 21h
 
-; 	pop cx							; loops heart #Jieco
-; 	pop bx							; causes a bug when commented 
-; 	add bx, 20					;
-; 	loop @@printHeart		;
+	;Combo label #Jieco:
+	; call DisplayCombo ; yung ":" lang to
 
-; 	push [HeartFileHandle]
-; 	call CloseFile
+	ret
+endp PrintStatsArea
+
+
+;----------------------------------------------
+; Updates the amount of lives shown on screen
+;----------------------------------------------
+proc UpdateLives
+	;Clear previous hearts:
+	; push 64											
+	; push 14
+	; push BHealthPrintStartLine
+	; push BHealthPrintStartRow
+	; push BlackColor
+	; call PrintColor
+
+	push offset BHealthFileName
+	push offset BHealthFileHandle
+	call OpenFile
+
+	;Print amount of lifes remaining:
+	xor ch, ch
+	mov cl, [LivesRemaining]
+
+	mov bx, BHealthPrintStartRow
+
+@@printBHealth:
+	push bx
+	push cx
+
+	push [BHealthFileHandle]
+	push BHealthLength
+	push BHealthHeight
+	push BHealthPrintStartLine
+	push bx
+	push offset FileReadBuffer
+	call PrintBMP
+
+	pop cx							
+	pop bx							
+	add bx, 8
+	loop @@printBHealth
+
+	push [BHealthFileHandle]
+	call CloseFile
 
 	ret
 endp UpdateLives

@@ -1,10 +1,5 @@
 ; -----------------------------------------------------------
 ; This file implements the combo streak feature for alien kills.
-;
-; The combo should:
-;   [ ] unlocks a skill after reaching a certain combo count   
-;   [ ] combo count is consumed upon use which is equivalent to the combo count 
-;     requirement of a skill
 ; 
 ;	Bugs:
 ;		- Combo resets when bullets 'passed through' aliens
