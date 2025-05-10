@@ -996,6 +996,8 @@ proc PlayGame
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
 	mov [word ptr PlayerShootingRowLocation], 0
+	mov [byte ptr AOEKillDirection], 0
+    mov [byte ptr AOEEnabled], 0
 
 @@clearShot:
 	push 2
