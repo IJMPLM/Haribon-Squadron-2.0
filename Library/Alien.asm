@@ -626,6 +626,8 @@ proc CheckAndHitAlien
     call KillAlien
 
 @@removeShot:
+	push 2
+	call Delay
     mov [byte ptr PlayerShootingExists], 0
     mov [word ptr PlayerBulletLineLocation], 0
     mov [word ptr PlayerShootingRowLocation], 0
