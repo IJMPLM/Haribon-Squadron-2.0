@@ -98,6 +98,8 @@ include "Library/NAssets.asm"
 	RedColor						equ	40
 	BlueColor						equ	54
 	WhiteColor						equ	255
+	OrangeColor						equ 6
+	YellowColor					    equ 0Eh 
 
 CODESEG
 include "Library/Alien.asm"
@@ -273,7 +275,7 @@ proc UpdateScoreStat
 	int 10h
 
 	xor ah, ah
-	mov ax, [Score]
+	mov ax, [word ptr Score]
 	push ax
 	call HexToDecimal
 
@@ -443,7 +445,7 @@ endp InitializeLevel
 ; Initiating the game, setting the initial values
 ; -----------------------------------------------
 proc InitializeGame
-	mov [byte ptr Score], 0
+	mov [word ptr Score], 300 ; #Jieco
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
@@ -910,7 +912,7 @@ proc PlayGame
     push ShootingHeight
     push [word ptr SecondaryBulletLineLocation]
     push [word ptr SecondaryShootingRowLocation]
-    push RedColor
+    push YellowColor
     call PrintColor
     
     ; Check for alien hits
@@ -970,7 +972,7 @@ proc PlayGame
 	push 140        ; height
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	push RedColor
 	call PrintColor
 	jmp @@clearShot
 
@@ -980,7 +982,12 @@ proc PlayGame
 	push ShootingHeight
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	mov al, BlueColor
+	cmp [byte ptr AOEEnabled], 1
+	jne @@normalColor
+	mov al, OrangeColor
+@@normalColor:
+	push ax
 	call PrintColor
 	jmp @@clearShot
 
@@ -1014,7 +1021,12 @@ proc PlayGame
 	push ax
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	mov al, BlueColor
+	cmp [byte ptr AOEEnabled], 1
+	jne @@normalColorMove
+	mov al, OrangeColor
+@@normalColorMove:
+	push ax
 	call PrintColor
 	jmp @@clearShot
 
@@ -1026,6 +1038,8 @@ proc PlayGame
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
 	mov [word ptr PlayerShootingRowLocation], 0
+	mov [byte ptr AOEKillDirection], 0
+    mov [byte ptr AOEEnabled], 0
 
 @@clearShot:
 	push 2
@@ -1135,15 +1149,15 @@ proc PlayGame
 	call ResetCombo
 
 	;sub 5 score if possible, if he doesn't have 5 yet, just reset to 0:
-	cmp [byte ptr Score], 5
+	cmp [word ptr Score], 5
 	jb @@resetScoreAfterDeath
 
-	sub [byte ptr Score], 5
+	sub [word ptr Score], 5
 	jmp @@resetBeforeContinueAfterDeath
 
 
 @@resetScoreAfterDeath:
-	mov [byte ptr Score], 0
+	mov [word ptr Score], 0
 
 @@resetBeforeContinueAfterDeath:
 	call MoveToStart
@@ -1216,7 +1230,7 @@ proc PlayGame
 	cmp [byte ptr DidNotDieInLevelBool], 1
 	jne @@SkipPerfectLevelBonus
 
-	add [byte ptr Score], 5 ;special bonus for perfect level (no death in level)
+	add [word ptr Score], 5 ;special bonus for perfect level (no death in level)
 
 	;print bonus message:
 	mov ah, 2
