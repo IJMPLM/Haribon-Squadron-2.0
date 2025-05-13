@@ -196,7 +196,7 @@ proc PrintMainMenu
 	int 21h
 
 	mov al, [FileReadBuffer]
-	cmp al, [Score]
+	cmp ax, [Score]
 	ja @@printMenu ;if current score is lower than 5th place, don't ask
 
 @@okToAsk:
