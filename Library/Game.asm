@@ -104,6 +104,8 @@ include "Library/NAssets.asm"
 	RedColor						equ	40
 	BlueColor						equ	54
 	WhiteColor						equ	255
+	OrangeColor						equ 6
+	YellowColor					    equ 0Eh 
 
 CODESEG
 include "Library/Alien.asm"
@@ -965,7 +967,7 @@ proc PlayGame
     push ShootingHeight
     push [word ptr SecondaryBulletLineLocation]
     push [word ptr SecondaryShootingRowLocation]
-    push RedColor
+    push YellowColor
     call PrintColor
     
     ; Check for alien hits
@@ -1025,7 +1027,7 @@ proc PlayGame
 	push 140        ; height
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	push RedColor
 	call PrintColor
 	jmp @@clearShot
 
@@ -1035,7 +1037,12 @@ proc PlayGame
 	push ShootingHeight
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	mov al, BlueColor
+	cmp [byte ptr AOEEnabled], 1
+	jne @@normalColor
+	mov al, OrangeColor
+@@normalColor:
+	push ax
 	call PrintColor
 	jmp @@clearShot
 
@@ -1069,7 +1076,12 @@ proc PlayGame
 	push ax
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	mov al, BlueColor
+	cmp [byte ptr AOEEnabled], 1
+	jne @@normalColorMove
+	mov al, OrangeColor
+@@normalColorMove:
+	push ax
 	call PrintColor
 	jmp @@clearShot
 
@@ -1081,6 +1093,8 @@ proc PlayGame
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
 	mov [word ptr PlayerShootingRowLocation], 0
+	mov [byte ptr AOEKillDirection], 0
+    mov [byte ptr AOEEnabled], 0
 
 @@clearShot:
 	push 2
