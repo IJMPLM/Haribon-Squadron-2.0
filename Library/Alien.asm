@@ -741,6 +741,8 @@ KillAlien:
 	call ValidateCombo ; #Jieco
 	call DisplayCombo
 	call UpdateComboStat 
+	inc [word ptr Score]
+	call UpdateScoreStat
 
 	;Calculate alien position
 	mov ax, bx
@@ -977,7 +979,7 @@ proc CheckAndHitAlienSecondary
 	mov [word ptr SecondaryShootingRowLocation], 0
 
     ; Increase score
-    inc [byte ptr Score]
+    inc [word ptr Score]
     call UpdateScoreStat
 
 	pop ax

@@ -1,5 +1,8 @@
 ; -----------------------------------------------------------
 ; This file implements the combo streak feature for alien kills.
+;
+;	Bug:
+;		- Combo does not reset when stage is immediately cleared
 ; -----------------------------------------------------------
 
 DATASEG

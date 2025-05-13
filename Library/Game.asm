@@ -273,7 +273,7 @@ proc UpdateScoreStat
 	int 10h
 
 	xor ah, ah
-	mov ax, [Score]
+	mov ax, [word ptr Score]
 	push ax
 	call HexToDecimal
 
@@ -443,7 +443,7 @@ endp InitializeLevel
 ; Initiating the game, setting the initial values
 ; -----------------------------------------------
 proc InitializeGame
-	mov [byte ptr Score], 0
+	mov [word ptr Score], 300 ; #Jieco
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
@@ -1135,15 +1135,15 @@ proc PlayGame
 	call ResetCombo
 
 	;sub 5 score if possible, if he doesn't have 5 yet, just reset to 0:
-	cmp [byte ptr Score], 5
+	cmp [word ptr Score], 5
 	jb @@resetScoreAfterDeath
 
-	sub [byte ptr Score], 5
+	sub [word ptr Score], 5
 	jmp @@resetBeforeContinueAfterDeath
 
 
 @@resetScoreAfterDeath:
-	mov [byte ptr Score], 0
+	mov [word ptr Score], 0
 
 @@resetBeforeContinueAfterDeath:
 	call MoveToStart
@@ -1216,7 +1216,7 @@ proc PlayGame
 	cmp [byte ptr DidNotDieInLevelBool], 1
 	jne @@SkipPerfectLevelBonus
 
-	add [byte ptr Score], 5 ;special bonus for perfect level (no death in level)
+	add [word ptr Score], 5 ;special bonus for perfect level (no death in level)
 
 	;print bonus message:
 	mov ah, 2
