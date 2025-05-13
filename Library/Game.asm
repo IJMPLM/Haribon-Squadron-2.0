@@ -89,6 +89,7 @@ include "Library/NAssets.asm"
 	FileReadBuffer					db	320 dup (?)
 
 	LaserEnabled	 				db 	?
+	LaserRow						dw  ?
 	AOEEnabled						db	0
 	AOEKillDirection				db  0 ; 0 - None, 1 - Right, 2 - Left (For splatter)
 

@@ -703,6 +703,11 @@ proc CheckAndHitAlien
     mov di, cx  ; Column number
     xor si, si  ; Start from first row
 
+	mov ax, [AliensPrintStartLine] ; Load value from memory into register
+	mov [LaserRow], ax                 ; Store register value into destination
+	sub [LaserRow], 24
+
+
 @@columnLoop:
     cmp si, 3   ; Check if we've done all 3 rows
     je @@columnCleared
@@ -718,6 +723,7 @@ proc CheckAndHitAlien
     ; Kill alien at current position
     push si
     push di
+	add [word ptr LaserRow], 24
     call KillAlien
     pop di
     pop si
@@ -733,6 +739,7 @@ proc CheckAndHitAlien
     mov [byte ptr PlayerShootingExists], 0
     mov [word ptr PlayerBulletLineLocation], 0
     mov [word ptr PlayerShootingRowLocation], 0
+    mov [word ptr LaserRow], 0
 
 @@procEnd:
     ret
@@ -765,10 +772,13 @@ KillAlien:
 	mov bl, 20
 	mul bl
 
-	mov dx, ax      ;line position
-	add dx, [AliensPrintStartLine]
-	add dx, 5
+	mov dx, [word ptr PlayerBulletLineLocation]
+	cmp [byte ptr LaserEnabled], 1
+	jne @@nolaserSplatter
 
+	mov dx, [word ptr LaserRow]
+
+@@nolaserSplatter:
 	pop ax
 	shr ax, 8
 	mov bl, 36
