@@ -50,10 +50,29 @@ DATASEG
 	ExplosionLength					equ	32
 	ExplosionHeight					equ	32
 
-	SkillsFileName				db	'Assets/Skills.bmp', 0
+	SkillsFileName				db	'Assets/GLSkill1.bmp', 0
 	SkillsFileHandle			dw	?
-	SkillsLength					equ 60	
-	SkillsHeight					equ 16	; 16 is max 
+
+	GLSkill1FileName				db 'Assets/GLSkill1.bmp', 0
+	GLSkill1FileHandle			dw	?
+
+	GLSkill2FileName				db 'Assets/GLSkill2.bmp', 0
+	GLSkill2FileHandle			dw	?
+
+	GLSkill3FileName				db 'Assets/GLSkill3.bmp', 0
+	GLSkill3FileHandle			dw	?
+
+	GKSkill1FileName				db 'Assets/GKSkill1.bmp', 0
+	GKSkill1FileHandle			dw	?
+
+	GKSkill2FileName				db 'Assets/GKSkill2.bmp', 0
+	GKSkill2FileHandle			dw	?
+
+	GKSkill3FileName				db 'Assets/GKSkill3.bmp', 0
+	GKSkill3FileHandle			dw	?
+
+	SkillLength						equ 16
+	SkillHeight						equ 16
 
 	BatteryFileName				db	'Assets/Battery.bmp', 0
 	BatteryFileHandle			dw	?
