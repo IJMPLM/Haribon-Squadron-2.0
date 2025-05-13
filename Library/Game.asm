@@ -803,10 +803,16 @@ proc PlayGame
     jmp @@readKey
 
 @@enableLaser:
+    call CheckSkillAvailability    ; Check if skills are available based on current combo
+    cmp [byte ptr COMBO_VAL], 5    ; Check if we have enough combo for laser
+    jb @@printShooterAgain        ; If not enough combo, ignore laser press
     cmp [byte ptr PlayerShootingExists], 0
     jne @@printShooterAgain
-	mov [byte ptr LaserEnabled], 1
-    je @@shootPressed
+    mov [byte ptr LaserEnabled], 1
+    sub [byte ptr COMBO_VAL], 5    ; Deduct combo cost
+    call UpdateComboStat          ; Update combo display
+    call DisplayCombo
+    jmp @@shootPressed
 
 @@enableAOE:
 	mov [byte ptr AOEEnabled], 1
