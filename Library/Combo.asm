@@ -1,5 +1,8 @@
 ; -----------------------------------------------------------
 ; This file implements the combo streak feature for alien kills.
+;
+;	Bug:
+;		- Combo does not reset when stage is immediately cleared
 ; -----------------------------------------------------------
 
 DATASEG
@@ -189,7 +192,7 @@ endp DisplayCombo
 proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
 	xor bh, bh
 	mov dh, 19
-	mov dl, 37
+	mov dl, 33
 	mov ah, 2
 	int 10h
 
