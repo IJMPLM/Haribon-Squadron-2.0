@@ -374,32 +374,38 @@ proc UpdateAliensShots
 	je @@level5
 	cmp al, 6
 	je @@level6
+	cmp al, 7
+	je @@level7
+	cmp al, 8
+	je @@level8
+	cmp al, 9
+	je @@level9
 	; Default: Level 1
-	mov bx, 8
+	mov bx, 2
 	jmp @@setSpeed
 @@level2:
-	mov bx, 12
+	mov bx, 4
 	jmp @@setSpeed
 @@level3:
-	mov bx, 16
+	mov bx, 6
 	jmp @@setSpeed
 @@level4:
-	mov bx, 20
+	mov bx, 10
 	jmp @@setSpeed
 @@level5:
-	mov bx, 24
+	mov bx, 12
 	jmp @@setSpeed
 @@level6:
-	mov bx, 26
+	mov bx, 14
 	jmp @@setSpeed
 @@level7:
-	mov bx, 28
+	mov bx, 20
 	jmp @@setSpeed
 @@level8:
-	mov bx, 30
+	mov bx, 22
 	jmp @@setSpeed
 @@level9:
-	mov bx, 32
+	mov bx, 24
 @@setSpeed:
 
 	xor ch, ch
@@ -616,44 +622,47 @@ proc CheckAndHitAlien
     cmp [byte ptr AOEEnabled], 1
     jne @@normalKill
 
-    ; Kill center alien
+    ; Kill center alien first
     push bx
-	mov [byte ptr AOEKillDirection], 0
+    mov [byte ptr AOEKillDirection], 0
     call KillAlien
     pop bx
 
-    ; Try kill right alien first if not rightmost
+    ; Try kill right alien if possible
     mov ax, bx
     inc ax
-    test ax, 7      ; Check if would move to next row
-    jz @@tryLeft    ; If at edge, try left instead
+    cmp ax, 24             ; Check array bounds
+    jae @@tryLeft         ; Skip if out of bounds
+    mov cx, ax
+    and cx, 7             ; Get column position (0-7)
+    jz @@tryLeft          ; If at edge, skip right
     
     push bx
-    inc bx          ; Move to right alien
+    inc bx                ; Move to right alien
     cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@tryLeft   ; Try left if right alien is dead
-	mov [byte ptr AOEKillDirection], 1
-    call KillAlien  ; Kill right alien if exists
+    jne @@skipRight       ; Skip if right alien is dead
+    mov [byte ptr AOEKillDirection], 1
+    call KillAlien        ; Kill right alien
+@@skipRight:
     pop bx
-    jmp @@aoeComplete
 
 @@tryLeft:
-    pop bx          ; Restore index if we pushed it
-    ; Try kill left alien if not leftmost
-    test bl, 7      ; Check if at leftmost position
-    jz @@aoeComplete
+    ; Try kill left alien if possible
+    mov ax, bx  
+    test al, 7            ; Check if at left edge
+    jz @@aoeComplete      ; Skip if at left edge
     
-    push bx 
-    dec bx          ; Move to left alien
+    push bx
+    dec bx                ; Move to left alien
     cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@skipLeft
-	mov [byte ptr AOEKillDirection], 2
-    call KillAlien  ; Kill left alien if exists
+    jne @@skipLeft        ; Skip if left alien is dead
+    mov [byte ptr AOEKillDirection], 2
+    call KillAlien        ; Kill left alien
 @@skipLeft:
     pop bx
 
 @@aoeComplete:
-	mov [byte ptr AOEKillDirection], 0
+    mov [byte ptr AOEKillDirection], 0
     mov [byte ptr AOEEnabled], 0
 	push 2
 	call Delay
