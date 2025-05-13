@@ -99,6 +99,7 @@ include "Library/NAssets.asm"
 	BlueColor						equ	54
 	WhiteColor						equ	255
 	OrangeColor						equ 6
+	YellowColor					    equ 0Eh 
 
 CODESEG
 include "Library/Alien.asm"
@@ -911,7 +912,7 @@ proc PlayGame
     push ShootingHeight
     push [word ptr SecondaryBulletLineLocation]
     push [word ptr SecondaryShootingRowLocation]
-    push RedColor
+    push YellowColor
     call PrintColor
     
     ; Check for alien hits
@@ -971,7 +972,7 @@ proc PlayGame
 	push 140        ; height
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	push RedColor
 	call PrintColor
 	jmp @@clearShot
 
