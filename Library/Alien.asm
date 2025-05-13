@@ -213,6 +213,22 @@ endp UpdateAliensLocation
 ; When updated location is updated and Aliens are printed again
 ; ---------------------------------------------------------------
 proc CheckAndMoveAliens
+	cmp [byte ptr DebugBool], 1
+	jne @@skipDebug
+
+    ; Print aliens remaining count
+    xor bh, bh      ; Page 0
+    mov dh, 1       ; Row 1
+    mov dl, 35      ; Column 35
+    mov ah, 2       ; Set cursor position
+    int 10h
+
+    mov al, [AliensLeftAmount]
+    add al, '0'     ; Convert to ASCII
+    mov ah, 0Eh     ; Teletype output
+    int 10h         ; Print the number
+
+@@skipDebug:
     ; Check and update freeze state first
     cmp [byte ptr FreezeActive], 1
     jne @@checkMovement
@@ -912,25 +928,6 @@ proc CheckAndHitAlienSecondary
     push 1
 
 @@checkhitRow:
-	cmp [byte ptr DebugBool], 1
-	jne @@skipLineDebugPrint
-
-; Print hit debug info (if used debug flag):
-	mov ah, 2
-	xor bh, bh
-	xor dx, dx
-	int 10h
-
-	mov dl, 'L'
-	int 21h
-
-	pop dx
-	push dx
-	add dl, 30h
-	mov ah, 2
-	int 21h
-
-@@skipLineDebugPrint:
     mov ax, [SecondaryShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2
@@ -953,18 +950,6 @@ proc CheckAndHitAlienSecondary
     jmp @@checkRow
 
 @@rowFound:
-	cmp [byte ptr DebugBool], 1
-	jne @@skipRowDebugPrint
-
-	mov ah, 2
-	mov dl, 'R'
-	int 21h
-
-	mov dx, cx
-	add dl, 30h
-	int 21h
-
-@@skipRowDebugPrint:
 	pop bx
 	;bx holding line, cx holding row
 
