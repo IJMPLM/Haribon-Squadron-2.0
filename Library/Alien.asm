@@ -33,13 +33,15 @@ proc PrintAliens
 	mov ax, [AliensPrintStartRow]
 	mov [bp - 4], ax
 
-
 	mov cx, 8
 @@printAlien:	push cx
 	push bx
 
-    cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@printBlackAlien
+    cmp [byte ptr AliensStatusArray + bx], 0
+    je @@printBlackAlien
+
+    cmp [byte ptr AliensStatusArray + bx], 2
+    je @@continueAlien
 
 	;Print Alien (check for freeze first):
 	cmp [byte ptr FreezeActive], 1
@@ -94,19 +96,6 @@ proc PrintAliens
 	call PrintBMP
 	jmp @@continueAlien
 
-@@printBlackAlien:
-    ; Print black rectangle for dead aliens:
-    push 42
-    push AlienHeight
-	mov ax, [bp - 2]
-	sub ax, 3
-	push ax
-	mov ax, [bp - 4]
-	sub ax, 10
-	push ax
-    push BlackColor
-    call PrintColor
-
 @@continueAlien:
     pop bx
     inc bx
@@ -126,6 +115,31 @@ proc PrintAliens
 
 	pop bp
 	ret
+
+@@printBlackAlien:
+    ; Print black rectangle for dead aliens:
+	mov [byte ptr AliensStatusArray + bx], 2
+    push 42
+    push AlienHeight
+	mov ax, [bp - 2]
+	sub ax, 4
+	push ax
+	mov ax, [bp - 4]
+	sub ax, 4
+	push ax
+    push BlackColor
+    call PrintColor
+	jmp @@continueAlien
+
+@@printFreezeAlien:
+	push [word ptr FAlienFileHandle]
+	push FAlienLength
+	push FAlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@continueAlien
 endp PrintAliens
 
 
@@ -237,6 +251,22 @@ endp UpdateAliensLocation
 ; When updated location is updated and Aliens are printed again
 ; ---------------------------------------------------------------
 proc CheckAndMoveAliens
+	cmp [byte ptr DebugBool], 1
+	jne @@skipDebug
+
+    ; Print aliens remaining count
+    xor bh, bh      ; Page 0
+    mov dh, 1       ; Row 1
+    mov dl, 35      ; Column 35
+    mov ah, 2       ; Set cursor position
+    int 10h
+
+    mov al, [AliensLeftAmount]
+    add al, '0'     ; Convert to ASCII
+    mov ah, 0Eh     ; Teletype output
+    int 10h         ; Print the number
+
+@@skipDebug:
     ; Check and update freeze state first
     cmp [byte ptr FreezeActive], 1
     jne @@checkMovement
@@ -323,8 +353,8 @@ proc AliensRandomShot
 	mov si, ax
 
 	;Check if Alien 'alive':
-	cmp [byte ptr AliensStatusArray + si], 0
-	jne @@setShootingLocation
+	cmp [byte ptr AliensStatusArray + si], 1
+	je @@setShootingLocation
 
 	inc [word ptr bp - 2]
 
@@ -708,7 +738,6 @@ proc CheckAndHitAlien
 
 @@doColumnClear:
     ; Column clear code (existing code)
-	mov [byte ptr LaserEnabled], ?
     mov ax, [PlayerShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2
@@ -727,6 +756,11 @@ proc CheckAndHitAlien
     mov di, cx  ; Column number
     xor si, si  ; Start from first row
 
+	mov ax, [AliensPrintStartLine] ; Load value from memory into register
+	mov [word ptr LaserRow], ax                 ; Store register value into destination
+	sub [word ptr LaserRow], 24
+
+
 @@columnLoop:
     cmp si, 3   ; Check if we've done all 3 rows
     je @@columnCleared
@@ -742,6 +776,7 @@ proc CheckAndHitAlien
     ; Kill alien at current position
     push si
     push di
+	add [word ptr LaserRow], 24
     call KillAlien
     pop di
     pop si
@@ -757,6 +792,8 @@ proc CheckAndHitAlien
     mov [byte ptr PlayerShootingExists], 0
     mov [word ptr PlayerBulletLineLocation], 0
     mov [word ptr PlayerShootingRowLocation], 0
+    mov [word ptr LaserRow], 0
+	mov [byte ptr LaserEnabled], ?
 
 @@procEnd:
     ret
@@ -789,10 +826,13 @@ KillAlien:
 	mov bl, 20
 	mul bl
 
-	mov dx, ax      ;line position
-	add dx, [AliensPrintStartLine]
-	add dx, 5
+	mov dx, [word ptr PlayerBulletLineLocation]
+	cmp [byte ptr LaserEnabled], 1
+	jne @@nolaserSplatter
 
+	mov dx, [word ptr LaserRow]
+
+@@nolaserSplatter:
 	pop ax
 	shr ax, 8
 	mov bl, 36
@@ -926,25 +966,6 @@ proc CheckAndHitAlienSecondary
     push 1
 
 @@checkhitRow:
-	cmp [byte ptr DebugBool], 1
-	jne @@skipLineDebugPrint
-
-; Print hit debug info (if used debug flag):
-	mov ah, 2
-	xor bh, bh
-	xor dx, dx
-	int 10h
-
-	mov dl, 'L'
-	int 21h
-
-	pop dx
-	push dx
-	add dl, 30h
-	mov ah, 2
-	int 21h
-
-@@skipLineDebugPrint:
     mov ax, [SecondaryShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2
@@ -967,18 +988,6 @@ proc CheckAndHitAlienSecondary
     jmp @@checkRow
 
 @@rowFound:
-	cmp [byte ptr DebugBool], 1
-	jne @@skipRowDebugPrint
-
-	mov ah, 2
-	mov dl, 'R'
-	int 21h
-
-	mov dx, cx
-	add dl, 30h
-	int 21h
-
-@@skipRowDebugPrint:
 	pop bx
 	;bx holding line, cx holding row
 
