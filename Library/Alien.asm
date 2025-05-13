@@ -384,28 +384,28 @@ proc UpdateAliensShots
 	mov bx, 2
 	jmp @@setSpeed
 @@level2:
-	mov bx, 4
+	mov bx, 3
 	jmp @@setSpeed
 @@level3:
-	mov bx, 6
+	mov bx, 5
 	jmp @@setSpeed
 @@level4:
-	mov bx, 10
+	mov bx, 7
 	jmp @@setSpeed
 @@level5:
-	mov bx, 12
+	mov bx, 10
 	jmp @@setSpeed
 @@level6:
-	mov bx, 14
+	mov bx, 12
 	jmp @@setSpeed
 @@level7:
-	mov bx, 20
+	mov bx, 14
 	jmp @@setSpeed
 @@level8:
-	mov bx, 22
+	mov bx, 16
 	jmp @@setSpeed
 @@level9:
-	mov bx, 24
+	mov bx, 18
 @@setSpeed:
 
 	xor ch, ch
