@@ -701,12 +701,29 @@ endp CheckIfAliensReachedBottom
 ; Handles shooter + Aliens hits and deaths, movements, etc.
 ; -----------------------------------------------------------
 proc PlayGame
+	; Open all alien sprites
 	push offset AlienFileName
 	push offset AlienFileHandle
 	call OpenFile
 
+	push offset Alien2FileName
+	push offset Alien2FileHandle
+	call OpenFile
+
+	push offset Alien3FileName
+	push offset Alien3FileHandle
+	call OpenFile
+
 	push offset FAlienFileName
 	push offset FAlienFileHandle
+	call OpenFile
+
+	push offset FAlien2FileName
+	push offset FAlien2FileHandle
+	call OpenFile
+
+	push offset FAlien3FileName
+	push offset FAlien3FileHandle
 	call OpenFile
 
 	push offset SplatterFileName
@@ -1420,8 +1437,7 @@ proc PlayGame
 	push 54
 	call Delay
 
-@@procEnd:
-	push [RShieldFileHandle]
+@@procEnd:	push [RShieldFileHandle]
 	call CloseFile
 
 	push [SShieldFileHandle]
@@ -1438,10 +1454,23 @@ proc PlayGame
 	push [SplatterFileHandle]
 	call CloseFile
 
+	; Close all alien sprites
 	push [FAlienFileHandle]
 	call CloseFile
 
+	push [FAlien2FileHandle]
+	call CloseFile
+
+	push [FAlien3FileHandle]
+	call CloseFile
+
 	push [AlienFileHandle]
+	call CloseFile
+
+	push [Alien2FileHandle]
+	call CloseFile
+
+	push [Alien3FileHandle]
 	call CloseFile
 
 	push [ExplosionFileHandle]
