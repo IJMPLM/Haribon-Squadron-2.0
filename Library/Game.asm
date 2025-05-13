@@ -75,8 +75,14 @@ include "Library/NAssets.asm"
 	HeartsPrintStartLine			equ	182		; to be replaced
 	HeartsPrintStartRow				equ	75
 
-	SkillsPrintStartLine		equ		180
-	SkillsPrintStartRow			equ		140
+	Skill1PrintStartLine		equ		180
+	Skill1PrintStartRow			equ		140
+
+	Skill2PrintStartLine		equ		180
+	Skill2PrintStartRow			equ		160
+
+	Skill3PrintStartLine		equ		180
+	Skill3PrintStartRow			equ		180
 
 	ScorePrintStartLine				equ		23
 	ScorePrintStartRow				equ		28
@@ -205,21 +211,70 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
-@@printSkills:		; #Skills
-	push offset SkillsFileName
-	push offset SkillsFileHandle	
+@@printGLSkill1:
+	push offset GLSkill1FileName
+	push offset GLSkill1FileHandle	
 	call OpenFile
 
-	push [SkillsFileHandle]
-	push SkillsLength
-	push SkillsHeight
-	push SkillsPrintStartLine
-	push SkillsPrintStartRow
+	push [GLSkill1FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
 	push offset FileReadBuffer
 	call PrintBMP
 
-	push [SkillsFileHandle]
+	push [GLSkill1FileHandle]
 	call CloseFile
+
+@@printGLSkill2:
+	push offset GLSkill2FileName
+	push offset GLSkill2FileHandle	
+	call OpenFile
+
+	push [GLSkill2FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill2PrintStartLine
+	push Skill2PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLSkill2FileHandle]
+	call CloseFile
+
+@@printGLSkill3:
+	push offset GLSkill3FileName
+	push offset GLSkill3FileHandle	
+	call OpenFile
+
+	push [GLSkill3FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill3PrintStartLine
+	push Skill3PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLSkill3FileHandle]
+	call CloseFile
+
+
+; @@printSkills:		; #Skills
+; 	push offset SkillsFileName
+; 	push offset SkillsFileHandle	
+; 	call OpenFile
+
+; 	push [SkillsFileHandle]
+; 	push SkillsLength
+; 	push SkillsHeight
+; 	push SkillsPrintStartLine
+; 	push SkillsPrintStartRow
+; 	push offset FileReadBuffer
+; 	call PrintBMP
+
+; 	push [SkillsFileHandle]
+; 	call CloseFile
 
 @@printBattery:
 	push offset BatteryFileName
