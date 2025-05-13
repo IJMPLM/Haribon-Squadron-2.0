@@ -536,8 +536,8 @@ proc CheckIfAliensReachedBottom
 	mov bx, 16
 
 @@checkLineTwo:
-	cmp [AliensStatusArray + bx], 0
-	jne @@lineTwoNotEmpty
+	cmp [AliensStatusArray + bx], 1
+	je @@lineTwoNotEmpty
 
 	inc bx
 	loop @@checkLineTwo
@@ -546,8 +546,8 @@ proc CheckIfAliensReachedBottom
 	mov bx, 8
 
 @@checkLineOne:
-	cmp [AliensStatusArray + bx], 0
-	jne @@lineOneNotEmpty
+	cmp [AliensStatusArray + bx], 1
+	je @@lineOneNotEmpty
 	
 	inc bx
 	loop @@checkLineOne
@@ -556,8 +556,8 @@ proc CheckIfAliensReachedBottom
 	xor bx, bx
 
 @@checkLineZero:
-	cmp [AliensStatusArray + bx], 0
-	jne @@lineZeroNotEmpty
+	cmp [AliensStatusArray + bx], 1
+	je @@lineZeroNotEmpty
 	
 	inc bx
 	loop @@checkLineZero

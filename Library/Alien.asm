@@ -33,16 +33,17 @@ proc PrintAliens
 	mov ax, [AliensPrintStartRow]
 	mov [bp - 4], ax
 
-
 	mov cx, 8
 @@printAlien:
 	push cx
 
 	push bx
 
-    cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@printBlackAlien
+    cmp [byte ptr AliensStatusArray + bx], 0
+    je @@printBlackAlien
 
+    cmp [byte ptr AliensStatusArray + bx], 2
+    je @@continueAlien
 
 	;Print Alien (check for freeze first):
 	cmp [byte ptr FreezeActive], 1
@@ -55,29 +56,6 @@ proc PrintAliens
 	push offset FileReadBuffer
 	call PrintBMP
 	jmp @@continueAlien
-
-@@printBlackAlien:
-    ; Print black rectangle for dead aliens:
-    push 42
-    push AlienHeight
-	mov ax, [bp - 2]
-	sub ax, 3
-	push ax
-	mov ax, [bp - 4]
-	sub ax, 10
-	push ax
-    push BlackColor
-    call PrintColor
-	jmp @@continueAlien
-
-@@printFreezeAlien:
-	push [word ptr FAlienFileHandle]
-	push FAlienLength
-	push FAlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
 
 @@continueAlien:
     pop bx
@@ -99,6 +77,31 @@ proc PrintAliens
 
 	pop bp
 	ret
+
+@@printBlackAlien:
+    ; Print black rectangle for dead aliens:
+	mov [byte ptr AliensStatusArray + bx], 2
+    push 42
+    push AlienHeight
+	mov ax, [bp - 2]
+	sub ax, 3
+	push ax
+	mov ax, [bp - 4]
+	sub ax, 10
+	push ax
+    push BlackColor
+    call PrintColor
+	jmp @@continueAlien
+
+@@printFreezeAlien:
+	push [word ptr FAlienFileHandle]
+	push FAlienLength
+	push FAlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@continueAlien
 endp PrintAliens
 
 
