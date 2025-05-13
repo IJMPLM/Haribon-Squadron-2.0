@@ -616,44 +616,44 @@ proc CheckAndHitAlien
     cmp [byte ptr AOEEnabled], 1
     jne @@normalKill
 
-    ; Kill center alien
+    ; Kill center alien first
     push bx
-	mov [byte ptr AOEKillDirection], 0
+    mov [byte ptr AOEKillDirection], 0
     call KillAlien
     pop bx
 
-    ; Try kill right alien first if not rightmost
+    ; Try right alien first if possible
     mov ax, bx
     inc ax
-    test ax, 7      ; Check if would move to next row
-    jz @@tryLeft    ; If at edge, try left instead
+    cmp ax, 24             ; First check array bounds
+    jae @@tryLeft         ; Skip if out of bounds
+    mov cx, ax
+    and cx, 7             ; Get column position (0-7)
+    jz @@tryLeft          ; If now at column 0, we were at edge
     
     push bx
-    inc bx          ; Move to right alien
+    inc bx                ; Move to right alien
     cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@tryLeft   ; Try left if right alien is dead
-	mov [byte ptr AOEKillDirection], 1
-    call KillAlien  ; Kill right alien if exists
+    jne @@skipRight       ; Skip if right alien is dead
+    mov [byte ptr AOEKillDirection], 1
+    call KillAlien        ; Kill right alien
+@@skipRight:
     pop bx
     jmp @@aoeComplete
 
 @@tryLeft:
-    pop bx          ; Restore index if we pushed it
-    ; Try kill left alien if not leftmost
-    test bl, 7      ; Check if at leftmost position
-    jz @@aoeComplete
+    ; Only try left if right wasn't possible
+    test bl, 7            ; Check if at left edge
+    jz @@aoeComplete      ; Skip if at left edge
     
-    push bx 
-    dec bx          ; Move to left alien
+    dec bx                ; Move to left alien
     cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@skipLeft
-	mov [byte ptr AOEKillDirection], 2
-    call KillAlien  ; Kill left alien if exists
-@@skipLeft:
-    pop bx
+    jne @@aoeComplete     ; Skip if left alien is dead
+    mov [byte ptr AOEKillDirection], 2
+    call KillAlien
 
 @@aoeComplete:
-	mov [byte ptr AOEKillDirection], 0
+    mov [byte ptr AOEKillDirection], 0
     mov [byte ptr AOEEnabled], 0
 	push 2
 	call Delay
