@@ -299,8 +299,8 @@ proc AliensRandomShot
 	mov si, ax
 
 	;Check if Alien 'alive':
-	cmp [byte ptr AliensStatusArray + si], 0
-	jne @@setShootingLocation
+	cmp [byte ptr AliensStatusArray + si], 1
+	je @@setShootingLocation
 
 	inc [word ptr bp - 2]
 
