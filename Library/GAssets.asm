@@ -16,9 +16,14 @@ DATASEG
 	SplatterFileHandle				dw	?
 	SplatterLength					equ	8
 	SplatterHeight					equ	8
-
 	SpaceBgFileName					db	'Assets/SpaceBg.bmp',0
 	SpaceBgFileHandle				dw	?
+
+	SpaceBg2FileName					db	'Assets/SpaceBg2.bmp',0
+	SpaceBg2FileHandle				dw	?
+
+	SpaceBg3FileName					db	'Assets/SpaceBg3.bmp',0
+	SpaceBg3FileHandle				dw	?
 
 	ShooterFileName					db	'Assets/Shooter2.bmp', 0
 	ShooterFileHandle				dw	?
