@@ -95,6 +95,7 @@ include "Library/NAssets.asm"
 	FileReadBuffer					db	320 dup (?)
 
 	LaserEnabled	 				db 	?
+	LaserRow						dw  ?
 	AOEEnabled						db	0
 	AOEKillDirection				db  0 ; 0 - None, 1 - Right, 2 - Left (For splatter)
 
@@ -114,15 +115,52 @@ include "Library/Combo.asm"
 
 ; -----------------------------------------------------------
 ; Prints the background image of the game (space background)
+; Changes background based on current level:
+; Levels 1-3: SpaceBg.bmp
+; Levels 4-6: SpaceBg2.bmp
+; Levels 7-9: SpaceBg3.bmp
 ; -----------------------------------------------------------
 proc PrintBackground
 	call playSoundMenu
 
+	; Select background based on level
+	cmp [byte ptr Level], 4
+	jb @@useBackground1  ; If level < 4, use first background
+	cmp [byte ptr Level], 7
+	jb @@useBackground2  ; If 4 <= level < 7, use second background
+	jmp @@useBackground3 ; Otherwise use third background
+
+@@useBackground1:
 	push offset SpaceBgFileName
 	push offset SpaceBgFileHandle
+	jmp @@openFile
+
+@@useBackground2:
+	push offset SpaceBg2FileName
+	push offset SpaceBg2FileHandle
+	jmp @@openFile
+
+@@useBackground3:
+	push offset SpaceBg3FileName
+	push offset SpaceBg3FileHandle
+
+@@openFile:
 	call OpenFile
 
+	; Get the handle from the correct variable based on which background we're using
+	cmp [byte ptr Level], 4
+	jb @@useHandle1
+	cmp [byte ptr Level], 7
+	jb @@useHandle2
+	push [SpaceBg3FileHandle]
+	jmp @@printBMP
+@@useHandle1:
 	push [SpaceBgFileHandle]
+	jmp @@printBMP
+@@useHandle2:
+	push [SpaceBg2FileHandle]
+
+@@printBMP:
 	push 320
 	push 200
 	push 0
@@ -130,7 +168,20 @@ proc PrintBackground
 	push offset FileReadBuffer
 	call PrintBMP
 
+	; Close the correct file handle
+	cmp [byte ptr Level], 4
+	jb @@closeHandle1
+	cmp [byte ptr Level], 7
+	jb @@closeHandle2
+	push [SpaceBg3FileHandle]
+	jmp @@closeFile
+@@closeHandle1:
 	push [SpaceBgFileHandle]
+	jmp @@closeFile
+@@closeHandle2:
+	push [SpaceBg2FileHandle]
+
+@@closeFile:
 	call CloseFile
 
 	ret
@@ -593,8 +644,8 @@ proc CheckIfAliensReachedBottom
 	mov bx, 16
 
 @@checkLineTwo:
-	cmp [AliensStatusArray + bx], 0
-	jne @@lineTwoNotEmpty
+	cmp [AliensStatusArray + bx], 1
+	je @@lineTwoNotEmpty
 
 	inc bx
 	loop @@checkLineTwo
@@ -603,8 +654,8 @@ proc CheckIfAliensReachedBottom
 	mov bx, 8
 
 @@checkLineOne:
-	cmp [AliensStatusArray + bx], 0
-	jne @@lineOneNotEmpty
+	cmp [AliensStatusArray + bx], 1
+	je @@lineOneNotEmpty
 	
 	inc bx
 	loop @@checkLineOne
@@ -613,8 +664,8 @@ proc CheckIfAliensReachedBottom
 	xor bx, bx
 
 @@checkLineZero:
-	cmp [AliensStatusArray + bx], 0
-	jne @@lineZeroNotEmpty
+	cmp [AliensStatusArray + bx], 1
+	je @@lineZeroNotEmpty
 	
 	inc bx
 	loop @@checkLineZero
@@ -653,12 +704,29 @@ endp CheckIfAliensReachedBottom
 ; Handles shooter + Aliens hits and deaths, movements, etc.
 ; -----------------------------------------------------------
 proc PlayGame
+	; Open all alien sprites
 	push offset AlienFileName
 	push offset AlienFileHandle
 	call OpenFile
 
+	push offset Alien2FileName
+	push offset Alien2FileHandle
+	call OpenFile
+
+	push offset Alien3FileName
+	push offset Alien3FileHandle
+	call OpenFile
+
 	push offset FAlienFileName
 	push offset FAlienFileHandle
+	call OpenFile
+
+	push offset FAlien2FileName
+	push offset FAlien2FileHandle
+	call OpenFile
+
+	push offset FAlien3FileName
+	push offset FAlien3FileHandle
 	call OpenFile
 
 	push offset SplatterFileName
@@ -686,7 +754,7 @@ proc PlayGame
 	call ClearScreen
 
 
-@@firstLevelPrint:
+@@stageOnePrint:
 	call PrintBackground
 	call PrintStatsArea
 	call UpdatePlayerStats
@@ -860,10 +928,16 @@ proc PlayGame
     jmp @@readKey
 
 @@enableLaser:
+    call CheckSkillAvailability    ; Check if skills are available based on current combo
+    cmp [byte ptr COMBO_VAL], 5    ; Check if we have enough combo for laser
+    jb @@printShooterAgain        ; If not enough combo, ignore laser press
     cmp [byte ptr PlayerShootingExists], 0
     jne @@printShooterAgain
-	mov [byte ptr LaserEnabled], 1
-    je @@shootPressed
+    mov [byte ptr LaserEnabled], 1
+    sub [byte ptr COMBO_VAL], 5    ; Deduct combo cost
+    call UpdateComboStat          ; Update combo display
+    call DisplayCombo
+    jmp @@shootPressed
 
 @@enableAOE:
 	mov [byte ptr AOEEnabled], 1
@@ -1229,7 +1303,7 @@ proc PlayGame
 	call ClearScreen
 
 	
-	jmp @@firstLevelPrint
+	jmp @@stageOnePrint
 
 
 	jmp @@readKey
@@ -1317,7 +1391,7 @@ proc PlayGame
 	call InitializeLevel
 
 	call ClearScreen
-	jmp @@firstLevelPrint
+	jmp @@stageOnePrint
 
 @@printWin:
 ; Print win message to user (finished 6 levels):
@@ -1367,8 +1441,7 @@ proc PlayGame
 	push 54
 	call Delay
 
-@@procEnd:
-	push [RShieldFileHandle]
+@@procEnd:	push [RShieldFileHandle]
 	call CloseFile
 
 	push [SShieldFileHandle]
@@ -1385,10 +1458,23 @@ proc PlayGame
 	push [SplatterFileHandle]
 	call CloseFile
 
+	; Close all alien sprites
 	push [FAlienFileHandle]
 	call CloseFile
 
+	push [FAlien2FileHandle]
+	call CloseFile
+
+	push [FAlien3FileHandle]
+	call CloseFile
+
 	push [AlienFileHandle]
+	call CloseFile
+
+	push [Alien2FileHandle]
+	call CloseFile
+
+	push [Alien3FileHandle]
 	call CloseFile
 
 	push [ExplosionFileHandle]
