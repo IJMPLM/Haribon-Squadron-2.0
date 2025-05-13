@@ -53,7 +53,7 @@ include "Library/NAssets.asm"
 	AliensShootingLineLocations	dw	10 dup (?)
 	AliensShootingRowLocations	dw	10 dup (?)
 
-	Score							db	?
+	Score							dw	?
 
 	LivesRemaining					db	?
 	Level							db	?
@@ -102,7 +102,7 @@ include "Library/NAssets.asm"
 CODESEG
 include "Library/Alien.asm"
 include "Library/Procs.asm"
-include "Library/Combo.asm" ; #Jieco
+include "Library/Combo.asm"
 
 ; -----------------------------------------------------------
 ; Prints the background image of the game (space background)
@@ -212,9 +212,6 @@ proc PrintStatsArea
 	mov dx, offset ScoreString
 	int 21h
 
-	;Combo label #Jieco:
-	; call DisplayCombo ; yung ":" lang to
-
 	ret
 endp PrintStatsArea
 
@@ -276,7 +273,7 @@ proc UpdateScoreStat
 	int 10h
 
 	xor ah, ah
-	mov al, [Score]
+	mov ax, [Score]
 	push ax
 	call HexToDecimal
 
@@ -386,12 +383,40 @@ proc InitializeLevel
 
 @@checkLevelFive:
 	cmp [byte ptr Level], 5
-	jne @@setLevelSix
+	jne @@checkLevelSix
 
 	mov [byte ptr AliensShootingMaxAmount], 9
 	jmp @@resetDidNotDieBool
 
-@@setLevelSix:
+@@checkLevelSix:
+	cmp [byte ptr Level], 6
+	jne @@checkLevelSeven
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@checkLevelSeven:
+	cmp [byte ptr Level], 7
+	jne @@checkLevelEight
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@checkLevelEight:
+	cmp [byte ptr Level], 8
+	jne @@checkLevelNine
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@checkLevelNine:
+	cmp [byte ptr Level], 9
+	jne @@setLevelTen
+
+	mov [byte ptr AliensShootingMaxAmount], 10
+	jmp @@resetDidNotDieBool
+
+@@setLevelTen:
 	mov [byte ptr AliensShootingMaxAmount], 10
 
 @@resetDidNotDieBool:
@@ -608,6 +633,7 @@ proc PlayGame
 	call UpdatePlayerStats
 	call UpdateLives
 	call UpdateComboStat ; #Jieco
+	call DisplayCombo
 
 	call CheckAndMoveAliens
 
@@ -736,6 +762,7 @@ proc PlayGame
     mov [word ptr InvincibleCounter], 36 ; 2 seconds
     sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
     call UpdateComboStat          ; Update combo display
+		call DisplayCombo
     jmp @@readKey
 
 @@freezePressed:
@@ -750,6 +777,7 @@ proc PlayGame
     mov [word ptr FreezeCounter], 54
     sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
     call UpdateComboStat         ; Update combo display
+		call DisplayCombo
 
     ; Force redraw of aliens to show frozen state immediately
     call ClearAliens
@@ -768,6 +796,7 @@ proc PlayGame
     inc [LivesRemaining]
     sub [byte ptr COMBO_VAL], REGEN_COST ; Reduce combo by cost
     call UpdateComboStat         ; Update combo display
+		call DisplayCombo
     call UpdateLives
     jmp @@readKey
 
@@ -991,7 +1020,8 @@ proc PlayGame
 
 @@removeShot:
 	call ResetCombo				; Resets combo #Jieco
-	call UpdateComboStat	; Reflect changes on screen 
+	call UpdateComboStat	; Reflect changes on screen 	
+	call DisplayCombo
 
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
@@ -1161,7 +1191,7 @@ proc PlayGame
 	int 21h
 	
 	xor ah, ah
-	mov al, [Score]
+	mov ax, [Score]
 	push ax
 	call HexToDecimal
 
@@ -1209,7 +1239,7 @@ proc PlayGame
 
 @@SkipPerfectLevelBonus:
 
-	cmp [byte ptr Level], 6 ; maximum level
+	cmp [byte ptr Level], 9 ; maximum level is now 9
 	je @@printWin
 
 
@@ -1220,6 +1250,7 @@ proc PlayGame
 	jmp @@firstLevelPrint
 
 @@printWin:
+; Print win message to user (finished 6 levels):
 ; Print win message to user (finished 6 levels):
 
 	call PrintBackground
@@ -1246,7 +1277,7 @@ proc PlayGame
 	int 21h
 
 	xor ah, ah
-	mov al, [Score]
+	mov ax, [Score]
 	push ax
 	call HexToDecimal
 

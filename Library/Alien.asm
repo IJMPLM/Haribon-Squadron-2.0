@@ -390,7 +390,16 @@ proc UpdateAliensShots
 	mov bx, 24
 	jmp @@setSpeed
 @@level6:
+	mov bx, 26
+	jmp @@setSpeed
+@@level7:
 	mov bx, 28
+	jmp @@setSpeed
+@@level8:
+	mov bx, 30
+	jmp @@setSpeed
+@@level9:
+	mov bx, 32
 @@setSpeed:
 
 	xor ch, ch
@@ -398,6 +407,7 @@ proc UpdateAliensShots
 
 	xor di, di
 @@moveShooting:
+	add [word ptr AliensShootingLineLocations + di], bx
 	add [word ptr AliensShootingLineLocations + di], bx
 	add di, 2
 	loop @@moveShooting
@@ -729,7 +739,7 @@ KillAlien:
 	
 	;Increase and update combo upon consecutive hit 
 	call ValidateCombo ; #Jieco
-  
+	call DisplayCombo
 	call UpdateComboStat 
 
 	;Calculate alien position
