@@ -481,6 +481,8 @@ proc InitializeLevel
 
 	call MoveToStart
 
+	; #Jieco
+	call ResetCombo ; resets combo every stage cleared
 
 	cld
 	push ds
@@ -689,7 +691,7 @@ proc PlayGame
 	call PrintStatsArea
 	call UpdatePlayerStats
 	call UpdateLives
-	call UpdateComboStat ; #Jieco
+	; call UpdateComboStat ; #Jieco for debugging
 	call DisplayCombo
 
 	call CheckAndMoveAliens
@@ -1086,9 +1088,10 @@ proc PlayGame
 	jmp @@clearShot
 
 @@removeShot:
-	call ResetCombo				; Resets combo #Jieco
-	call UpdateComboStat	; Reflect changes on screen 	
-	call DisplayCombo
+	; #Jieco
+	call ResetCombo				; Resets combo
+	call UpdateComboStat	; #Jieco for debugging 	
+	call DisplayCombo			; reflect changes on screen
 
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
@@ -1201,7 +1204,7 @@ proc PlayGame
 	loop @@blinkShooter
 
 	; reset combo #Jieco 
-	call ResetCombo
+	call ResetCombo	; resets combo upon death
 
 	;sub 5 score if possible, if he doesn't have 5 yet, just reset to 0:
 	cmp [word ptr Score], 5

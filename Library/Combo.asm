@@ -43,23 +43,23 @@ DATASEG
 	Combo4FileName				db	'Assets/4.bmp', 0
 	Combo4FileHandle			dw	?
 
-	Combo5FileName				db	'Assets/e3.bmp', 0
+	Combo5FileName				db	'Assets/5.bmp', 0
 	Combo5FileHandle			dw	?
 
-	Combo6FileName				db	'Assets/e4.bmp', 0
+	Combo6FileName				db	'Assets/6.bmp', 0
 	Combo6FileHandle			dw	?
 
-	; Combo7FileName				db	'Assets/7.bmp', 0
+	Combo7FileName				db	'Assets/7.bmp', 0
 	Combo7FileHandle			dw	?
 
-	; Combo8FileName				db	'Assets/8.bmp', 0
+	Combo8FileName				db	'Assets/8.bmp', 0
 	Combo8FileHandle			dw	?
 
 	Combo9FileName				db	'Assets/9.bmp', 0
 	Combo9FileHandle			dw	?
 	
-	ComboLength						equ 16
-	ComboHeight						equ 16
+	ComboLength						equ 20
+	ComboHeight						equ 20
 	ComboPrintStartLine		equ	149
 	ComboPrintStartRow		equ	285
 
@@ -99,8 +99,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo0FileHandle]
-	push 20
-	push 20
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -115,8 +115,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo1FileHandle]
-	push 20
-	push 20
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -132,8 +132,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo2FileHandle]
-	push 20
-	push 20
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -149,8 +149,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo3FileHandle]
-	push 20
-	push 20
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -166,8 +166,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo4FileHandle]
-	push 20
-	push 20
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -183,8 +183,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo5FileHandle]
-	push 20
-	push 20
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -200,8 +200,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo6FileHandle]
-	push 20
-	push 20
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -212,12 +212,54 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	ret
 
 @@printCombo7:
+	push offset Combo7FileName
+	push offset Combo7FileHandle	
+	call OpenFile
+
+	push [Combo7FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo7FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo8:
+	push offset Combo8FileName
+	push offset Combo8FileHandle	
+	call OpenFile
+
+	push [Combo8FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo8FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo9:
+	push offset Combo9FileName
+	push offset Combo9FileHandle	
+	call OpenFile
+
+	push [Combo9FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo9FileHandle]
+	call CloseFile
 	ret
 
 endp DisplayCombo
