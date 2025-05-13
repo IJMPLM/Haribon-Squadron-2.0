@@ -33,21 +33,61 @@ proc PrintAliens
 	mov ax, [AliensPrintStartRow]
 	mov [bp - 4], ax
 
-
 	mov cx, 8
-@@printAlien:
-	push cx
-
+@@printAlien:	push cx
 	push bx
 
-    cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@printBlackAlien
+    cmp [byte ptr AliensStatusArray + bx], 0
+    je @@printBlackAlien
 
+    cmp [byte ptr AliensStatusArray + bx], 2
+    je @@continueAlien
 
 	;Print Alien (check for freeze first):
 	cmp [byte ptr FreezeActive], 1
-	je @@printFreezeAlien
+	jne @@printNormal
+
+	; Frozen aliens based on level
+	mov al, [byte ptr Level]
+	cmp al, 4
+	jb @@frozen1
+	cmp al, 7
+	jb @@frozen2
+	; Level >= 7
+	push [word ptr FAlien3FileHandle]
+	jmp @@printFrozen
+@@frozen2:
+	push [word ptr FAlien2FileHandle]
+	jmp @@printFrozen
+@@frozen1:
+	push [word ptr FAlienFileHandle]
+
+@@printFrozen:
+	push FAlienLength
+	push FAlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@continueAlien
+
+@@printNormal:
+	; Normal aliens based on level
+	mov al, [byte ptr Level]
+	cmp al, 4
+	jb @@normal1
+	cmp al, 7
+	jb @@normal2
+	; Level >= 7
+	push [word ptr Alien3FileHandle]
+	jmp @@printNormalAlien
+@@normal2:
+	push [word ptr Alien2FileHandle]
+	jmp @@printNormalAlien
+@@normal1:
 	push [word ptr AlienFileHandle]
+
+@@printNormalAlien:
 	push AlienLength
 	push AlienHeight
 	push [word ptr bp - 2]
@@ -56,15 +96,36 @@ proc PrintAliens
 	call PrintBMP
 	jmp @@continueAlien
 
+@@continueAlien:
+    pop bx
+    inc bx
+	pop cx
+	add [word ptr bp - 4], 36 ;set location for next Alien
+
+	dec cx              ; Decrement inner loop counter 
+	jnz @@printAlien   ; Continue if not zero
+
+	add [word ptr bp - 2], 20 ;Set location for next line
+
+	pop cx
+	dec cx              ; Decrement outer loop counter
+	jnz @@printAliensLine   ; Continue if not zero
+
+	add sp, 4
+
+	pop bp
+	ret
+
 @@printBlackAlien:
     ; Print black rectangle for dead aliens:
+	mov [byte ptr AliensStatusArray + bx], 2
     push 42
     push AlienHeight
 	mov ax, [bp - 2]
-	sub ax, 3
+	sub ax, 4
 	push ax
 	mov ax, [bp - 4]
-	sub ax, 10
+	sub ax, 4
 	push ax
     push BlackColor
     call PrintColor
@@ -78,27 +139,7 @@ proc PrintAliens
 	push [word ptr bp - 4]
 	push offset FileReadBuffer
 	call PrintBMP
-
-@@continueAlien:
-    pop bx
-    inc bx
-
-	pop cx
-
-
-	add [word ptr bp - 4], 36 ;set location for next Alien
-
-	loop @@printAlien
-
-	add [word ptr bp - 2], 20 ;Set location for next line
-
-	pop cx
-	loop @@printAliensLine
-
-	add sp, 4
-
-	pop bp
-	ret
+	jmp @@continueAlien
 endp PrintAliens
 
 
@@ -210,6 +251,22 @@ endp UpdateAliensLocation
 ; When updated location is updated and Aliens are printed again
 ; ---------------------------------------------------------------
 proc CheckAndMoveAliens
+	cmp [byte ptr DebugBool], 1
+	jne @@skipDebug
+
+    ; Print aliens remaining count
+    xor bh, bh      ; Page 0
+    mov dh, 1       ; Row 1
+    mov dl, 35      ; Column 35
+    mov ah, 2       ; Set cursor position
+    int 10h
+
+    mov al, [AliensLeftAmount]
+    add al, '0'     ; Convert to ASCII
+    mov ah, 0Eh     ; Teletype output
+    int 10h         ; Print the number
+
+@@skipDebug:
     ; Check and update freeze state first
     cmp [byte ptr FreezeActive], 1
     jne @@checkMovement
@@ -296,8 +353,8 @@ proc AliensRandomShot
 	mov si, ax
 
 	;Check if Alien 'alive':
-	cmp [byte ptr AliensStatusArray + si], 0
-	jne @@setShootingLocation
+	cmp [byte ptr AliensStatusArray + si], 1
+	je @@setShootingLocation
 
 	inc [word ptr bp - 2]
 
@@ -384,28 +441,28 @@ proc UpdateAliensShots
 	mov bx, 2
 	jmp @@setSpeed
 @@level2:
-	mov bx, 4
+	mov bx, 3
 	jmp @@setSpeed
 @@level3:
-	mov bx, 6
+	mov bx, 5
 	jmp @@setSpeed
 @@level4:
-	mov bx, 10
+	mov bx, 7
 	jmp @@setSpeed
 @@level5:
-	mov bx, 12
+	mov bx, 10
 	jmp @@setSpeed
 @@level6:
-	mov bx, 14
+	mov bx, 12
 	jmp @@setSpeed
 @@level7:
-	mov bx, 20
+	mov bx, 14
 	jmp @@setSpeed
 @@level8:
-	mov bx, 22
+	mov bx, 16
 	jmp @@setSpeed
 @@level9:
-	mov bx, 24
+	mov bx, 18
 @@setSpeed:
 
 	xor ch, ch
@@ -681,7 +738,6 @@ proc CheckAndHitAlien
 
 @@doColumnClear:
     ; Column clear code (existing code)
-	mov [byte ptr LaserEnabled], ?
     mov ax, [PlayerShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2
@@ -700,6 +756,11 @@ proc CheckAndHitAlien
     mov di, cx  ; Column number
     xor si, si  ; Start from first row
 
+	mov ax, [AliensPrintStartLine] ; Load value from memory into register
+	mov [word ptr LaserRow], ax                 ; Store register value into destination
+	sub [word ptr LaserRow], 24
+
+
 @@columnLoop:
     cmp si, 3   ; Check if we've done all 3 rows
     je @@columnCleared
@@ -715,6 +776,7 @@ proc CheckAndHitAlien
     ; Kill alien at current position
     push si
     push di
+	add [word ptr LaserRow], 24
     call KillAlien
     pop di
     pop si
@@ -730,6 +792,8 @@ proc CheckAndHitAlien
     mov [byte ptr PlayerShootingExists], 0
     mov [word ptr PlayerBulletLineLocation], 0
     mov [word ptr PlayerShootingRowLocation], 0
+    mov [word ptr LaserRow], 0
+	mov [byte ptr LaserEnabled], ?
 
 @@procEnd:
     ret
@@ -762,10 +826,13 @@ KillAlien:
 	mov bl, 20
 	mul bl
 
-	mov dx, ax      ;line position
-	add dx, [AliensPrintStartLine]
-	add dx, 5
+	mov dx, [word ptr PlayerBulletLineLocation]
+	cmp [byte ptr LaserEnabled], 1
+	jne @@nolaserSplatter
 
+	mov dx, [word ptr LaserRow]
+
+@@nolaserSplatter:
 	pop ax
 	shr ax, 8
 	mov bl, 36
@@ -899,25 +966,6 @@ proc CheckAndHitAlienSecondary
     push 1
 
 @@checkhitRow:
-	cmp [byte ptr DebugBool], 1
-	jne @@skipLineDebugPrint
-
-; Print hit debug info (if used debug flag):
-	mov ah, 2
-	xor bh, bh
-	xor dx, dx
-	int 10h
-
-	mov dl, 'L'
-	int 21h
-
-	pop dx
-	push dx
-	add dl, 30h
-	mov ah, 2
-	int 21h
-
-@@skipLineDebugPrint:
     mov ax, [SecondaryShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2
@@ -940,18 +988,6 @@ proc CheckAndHitAlienSecondary
     jmp @@checkRow
 
 @@rowFound:
-	cmp [byte ptr DebugBool], 1
-	jne @@skipRowDebugPrint
-
-	mov ah, 2
-	mov dl, 'R'
-	int 21h
-
-	mov dx, cx
-	add dl, 30h
-	int 21h
-
-@@skipRowDebugPrint:
 	pop bx
 	;bx holding line, cx holding row
 
