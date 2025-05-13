@@ -75,8 +75,14 @@ include "Library/NAssets.asm"
 	HeartsPrintStartLine			equ	182		; to be replaced
 	HeartsPrintStartRow				equ	75
 
-	SkillsPrintStartLine		equ		180
-	SkillsPrintStartRow			equ		140
+	Skill1PrintStartLine		equ		180
+	Skill1PrintStartRow			equ		140
+
+	Skill2PrintStartLine		equ		180
+	Skill2PrintStartRow			equ		160
+
+	Skill3PrintStartLine		equ		180
+	Skill3PrintStartRow			equ		180
 
 	ScorePrintStartLine				equ		23
 	ScorePrintStartRow				equ		28
@@ -109,15 +115,52 @@ include "Library/Combo.asm"
 
 ; -----------------------------------------------------------
 ; Prints the background image of the game (space background)
+; Changes background based on current level:
+; Levels 1-3: SpaceBg.bmp
+; Levels 4-6: SpaceBg2.bmp
+; Levels 7-9: SpaceBg3.bmp
 ; -----------------------------------------------------------
 proc PrintBackground
 	call playSoundMenu
 
+	; Select background based on level
+	cmp [byte ptr Level], 4
+	jb @@useBackground1  ; If level < 4, use first background
+	cmp [byte ptr Level], 7
+	jb @@useBackground2  ; If 4 <= level < 7, use second background
+	jmp @@useBackground3 ; Otherwise use third background
+
+@@useBackground1:
 	push offset SpaceBgFileName
 	push offset SpaceBgFileHandle
+	jmp @@openFile
+
+@@useBackground2:
+	push offset SpaceBg2FileName
+	push offset SpaceBg2FileHandle
+	jmp @@openFile
+
+@@useBackground3:
+	push offset SpaceBg3FileName
+	push offset SpaceBg3FileHandle
+
+@@openFile:
 	call OpenFile
 
+	; Get the handle from the correct variable based on which background we're using
+	cmp [byte ptr Level], 4
+	jb @@useHandle1
+	cmp [byte ptr Level], 7
+	jb @@useHandle2
+	push [SpaceBg3FileHandle]
+	jmp @@printBMP
+@@useHandle1:
 	push [SpaceBgFileHandle]
+	jmp @@printBMP
+@@useHandle2:
+	push [SpaceBg2FileHandle]
+
+@@printBMP:
 	push 320
 	push 200
 	push 0
@@ -125,7 +168,20 @@ proc PrintBackground
 	push offset FileReadBuffer
 	call PrintBMP
 
+	; Close the correct file handle
+	cmp [byte ptr Level], 4
+	jb @@closeHandle1
+	cmp [byte ptr Level], 7
+	jb @@closeHandle2
+	push [SpaceBg3FileHandle]
+	jmp @@closeFile
+@@closeHandle1:
 	push [SpaceBgFileHandle]
+	jmp @@closeFile
+@@closeHandle2:
+	push [SpaceBg2FileHandle]
+
+@@closeFile:
 	call CloseFile
 
 	ret
@@ -156,21 +212,70 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
-@@printSkills:		; #Skills
-	push offset SkillsFileName
-	push offset SkillsFileHandle	
+@@printGLSkill1:
+	push offset GLSkill1FileName
+	push offset GLSkill1FileHandle	
 	call OpenFile
 
-	push [SkillsFileHandle]
-	push SkillsLength
-	push SkillsHeight
-	push SkillsPrintStartLine
-	push SkillsPrintStartRow
+	push [GLSkill1FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
 	push offset FileReadBuffer
 	call PrintBMP
 
-	push [SkillsFileHandle]
+	push [GLSkill1FileHandle]
 	call CloseFile
+
+@@printGLSkill2:
+	push offset GLSkill2FileName
+	push offset GLSkill2FileHandle	
+	call OpenFile
+
+	push [GLSkill2FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill2PrintStartLine
+	push Skill2PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLSkill2FileHandle]
+	call CloseFile
+
+@@printGLSkill3:
+	push offset GLSkill3FileName
+	push offset GLSkill3FileHandle	
+	call OpenFile
+
+	push [GLSkill3FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill3PrintStartLine
+	push Skill3PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLSkill3FileHandle]
+	call CloseFile
+
+
+; @@printSkills:		; #Skills
+; 	push offset SkillsFileName
+; 	push offset SkillsFileHandle	
+; 	call OpenFile
+
+; 	push [SkillsFileHandle]
+; 	push SkillsLength
+; 	push SkillsHeight
+; 	push SkillsPrintStartLine
+; 	push SkillsPrintStartRow
+; 	push offset FileReadBuffer
+; 	call PrintBMP
+
+; 	push [SkillsFileHandle]
+; 	call CloseFile
 
 @@printBattery:
 	push offset BatteryFileName
@@ -630,7 +735,7 @@ proc PlayGame
 	call ClearScreen
 
 
-@@firstLevelPrint:
+@@stageOnePrint:
 	call PrintBackground
 	call PrintStatsArea
 	call UpdatePlayerStats
@@ -804,10 +909,16 @@ proc PlayGame
     jmp @@readKey
 
 @@enableLaser:
+    call CheckSkillAvailability    ; Check if skills are available based on current combo
+    cmp [byte ptr COMBO_VAL], 5    ; Check if we have enough combo for laser
+    jb @@printShooterAgain        ; If not enough combo, ignore laser press
     cmp [byte ptr PlayerShootingExists], 0
     jne @@printShooterAgain
-	mov [byte ptr LaserEnabled], 1
-    je @@shootPressed
+    mov [byte ptr LaserEnabled], 1
+    sub [byte ptr COMBO_VAL], 5    ; Deduct combo cost
+    call UpdateComboStat          ; Update combo display
+    call DisplayCombo
+    jmp @@shootPressed
 
 @@enableAOE:
 	mov [byte ptr AOEEnabled], 1
@@ -1172,7 +1283,7 @@ proc PlayGame
 	call ClearScreen
 
 	
-	jmp @@firstLevelPrint
+	jmp @@stageOnePrint
 
 
 	jmp @@readKey
@@ -1260,7 +1371,7 @@ proc PlayGame
 	call InitializeLevel
 
 	call ClearScreen
-	jmp @@firstLevelPrint
+	jmp @@stageOnePrint
 
 @@printWin:
 ; Print win message to user (finished 6 levels):
