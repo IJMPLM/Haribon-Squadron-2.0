@@ -684,7 +684,6 @@ proc CheckAndHitAlien
 
 @@doColumnClear:
     ; Column clear code (existing code)
-	mov [byte ptr LaserEnabled], ?
     mov ax, [PlayerShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2
@@ -704,8 +703,8 @@ proc CheckAndHitAlien
     xor si, si  ; Start from first row
 
 	mov ax, [AliensPrintStartLine] ; Load value from memory into register
-	mov [LaserRow], ax                 ; Store register value into destination
-	sub [LaserRow], 24
+	mov [word ptr LaserRow], ax                 ; Store register value into destination
+	sub [word ptr LaserRow], 24
 
 
 @@columnLoop:
@@ -740,6 +739,7 @@ proc CheckAndHitAlien
     mov [word ptr PlayerBulletLineLocation], 0
     mov [word ptr PlayerShootingRowLocation], 0
     mov [word ptr LaserRow], 0
+	mov [byte ptr LaserEnabled], ?
 
 @@procEnd:
     ret
