@@ -84,10 +84,10 @@ proc PrintAliens
     push 42
     push AlienHeight
 	mov ax, [bp - 2]
-	sub ax, 3
+	sub ax, 4
 	push ax
 	mov ax, [bp - 4]
-	sub ax, 10
+	sub ax, 4
 	push ax
     push BlackColor
     call PrintColor
