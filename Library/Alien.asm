@@ -622,14 +622,14 @@ proc CheckAndHitAlien
     call KillAlien
     pop bx
 
-    ; Try right alien first if possible
+    ; Try kill right alien if possible
     mov ax, bx
     inc ax
-    cmp ax, 24             ; First check array bounds
+    cmp ax, 24             ; Check array bounds
     jae @@tryLeft         ; Skip if out of bounds
     mov cx, ax
     and cx, 7             ; Get column position (0-7)
-    jz @@tryLeft          ; If now at column 0, we were at edge
+    jz @@tryLeft          ; If at edge, skip right
     
     push bx
     inc bx                ; Move to right alien
@@ -639,18 +639,21 @@ proc CheckAndHitAlien
     call KillAlien        ; Kill right alien
 @@skipRight:
     pop bx
-    jmp @@aoeComplete
 
 @@tryLeft:
-    ; Only try left if right wasn't possible
-    test bl, 7            ; Check if at left edge
+    ; Try kill left alien if possible
+    mov ax, bx  
+    test al, 7            ; Check if at left edge
     jz @@aoeComplete      ; Skip if at left edge
     
+    push bx
     dec bx                ; Move to left alien
     cmp [byte ptr AliensStatusArray + bx], 1
-    jne @@aoeComplete     ; Skip if left alien is dead
+    jne @@skipLeft        ; Skip if left alien is dead
     mov [byte ptr AOEKillDirection], 2
-    call KillAlien
+    call KillAlien        ; Kill left alien
+@@skipLeft:
+    pop bx
 
 @@aoeComplete:
     mov [byte ptr AOEKillDirection], 0
