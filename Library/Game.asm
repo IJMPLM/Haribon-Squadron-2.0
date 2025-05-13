@@ -102,7 +102,7 @@ include "Library/NAssets.asm"
 CODESEG
 include "Library/Alien.asm"
 include "Library/Procs.asm"
-include "Library/Combo.asm" ; #Jieco
+include "Library/Combo.asm"
 
 ; -----------------------------------------------------------
 ; Prints the background image of the game (space background)
@@ -211,9 +211,6 @@ proc PrintStatsArea
 	mov ah, 9
 	mov dx, offset ScoreString
 	int 21h
-
-	;Combo label #Jieco:
-	; call DisplayCombo ; yung ":" lang to
 
 	ret
 endp PrintStatsArea
@@ -636,6 +633,7 @@ proc PlayGame
 	call UpdatePlayerStats
 	call UpdateLives
 	call UpdateComboStat ; #Jieco
+	call DisplayCombo
 
 	call CheckAndMoveAliens
 
@@ -764,6 +762,7 @@ proc PlayGame
     mov [word ptr InvincibleCounter], 36 ; 2 seconds
     sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
     call UpdateComboStat          ; Update combo display
+		call DisplayCombo
     jmp @@readKey
 
 @@freezePressed:
@@ -778,6 +777,7 @@ proc PlayGame
     mov [word ptr FreezeCounter], 54
     sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
     call UpdateComboStat         ; Update combo display
+		call DisplayCombo
 
     ; Force redraw of aliens to show frozen state immediately
     call ClearAliens
@@ -796,6 +796,7 @@ proc PlayGame
     inc [LivesRemaining]
     sub [byte ptr COMBO_VAL], REGEN_COST ; Reduce combo by cost
     call UpdateComboStat         ; Update combo display
+		call DisplayCombo
     call UpdateLives
     jmp @@readKey
 
@@ -1019,7 +1020,8 @@ proc PlayGame
 
 @@removeShot:
 	call ResetCombo				; Resets combo #Jieco
-	call UpdateComboStat	; Reflect changes on screen 
+	call UpdateComboStat	; Reflect changes on screen 	
+	call DisplayCombo
 
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
