@@ -98,6 +98,7 @@ include "Library/NAssets.asm"
 	RedColor						equ	40
 	BlueColor						equ	54
 	WhiteColor						equ	255
+	OrangeColor						equ 6
 
 CODESEG
 include "Library/Alien.asm"
@@ -980,7 +981,12 @@ proc PlayGame
 	push ShootingHeight
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	mov al, BlueColor
+	cmp [byte ptr AOEEnabled], 1
+	jne @@normalColor
+	mov al, OrangeColor
+@@normalColor:
+	push ax
 	call PrintColor
 	jmp @@clearShot
 
@@ -1014,7 +1020,12 @@ proc PlayGame
 	push ax
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	push BlueColor
+	mov al, BlueColor
+	cmp [byte ptr AOEEnabled], 1
+	jne @@normalColorMove
+	mov al, OrangeColor
+@@normalColorMove:
+	push ax
 	call PrintColor
 	jmp @@clearShot
 
