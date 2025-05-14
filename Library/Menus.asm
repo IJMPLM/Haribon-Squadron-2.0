@@ -6,7 +6,7 @@
 
 DATASEG
 	InstructionsScreen	db	?
-	ShipSelect			db 	?	 ; GL = 0, GL = 1
+	ShipSelect			db 	?	 ; GL = 0, GK = 1
 
 CODESEG
 

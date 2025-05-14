@@ -506,6 +506,9 @@ proc UpdateAliensShots
 	mov cx, 9
 	rep movsw
 
+	; #Jieco
+	call DisplayCombo ; refreshes display when eaten by a bullet
+
 @@decShootingsAmount:
 	dec [byte ptr AliensShootingCurrentAmount]
 
@@ -813,7 +816,8 @@ KillAlien:
 	;Increase and update combo upon consecutive hit 
 	call ValidateCombo ; #Jieco
 	call DisplayCombo
-	call UpdateComboStat 
+	; call UpdateComboStat ; for debugging
+	
 	inc [word ptr Score]
 	call UpdateScoreStat
 
