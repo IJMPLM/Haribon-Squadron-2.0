@@ -104,7 +104,7 @@ include "Library/NAssets.asm"
 	GreenColor						equ	30h
 	RedColor						equ	40
 	BlueColor						equ	54
-	WhiteColor						equ	255
+	WhiteColor						equ	15
 	OrangeColor						equ 6
 	YellowColor					    equ 0Eh 
 
@@ -733,13 +733,26 @@ proc PlayGame
 	push offset SplatterFileHandle
 	call OpenFile
 
-	push offset ShooterFileName
+	cmp [byte ptr ShipSelect], 0
+	jne @@openGK
+	
+	push offset GLS0FileName
+	push offset ShooterReloadFileHandle
+	call OpenFile
+	push offset GLS1FileName
+	push offset ShooterFileHandle
+	call OpenFile
+	jmp @@endShipSelect
+
+@@openGK:
+	push offset GKS0FileName
+	push offset ShooterReloadFileHandle
+	call OpenFile
+	push offset GKS1FileName
 	push offset ShooterFileHandle
 	call OpenFile
 
-	push offset ShooterReloadFileName
-	push offset ShooterReloadFileHandle
-	call OpenFile
+@@endShipSelect:
 
 	push offset SShieldFileName
 	push offset SShieldFileHandle
@@ -843,23 +856,26 @@ proc PlayGame
     cmp ah, 4Dh ; Right
     je @@moveRight
 
-	cmp ah, 2Dh ; X (Laser Enable)
-	je @@enableLaser
-
-	cmp ah, 2Fh ; V (AOE Enable) 
-	je @@enableAOE
-	
-    cmp ah, 2Ch ; Z (Freeze) CP: 5
-    je @@freezePressed
-
+	; Skill Selection per Ship
+	cmp [byte ptr ShipSelect], 0
+	jne @@checkGKSkills
     cmp ah, 2Eh ; C (Invincibility) CP: 7
     je @@invincibilityPressed
-
-    cmp ah, 13h ; R (Regenerate Heart) CP: 9
-    je @@regenerateHeart
-
-	cmp ah, 10h ; Q (Secondary Shot)
+	cmp ah, 2Dh ; X (Laser Enable) CP: 5
+	je @@enableLaser
+	cmp ah, 2Ch ; Z (Secondary Shot) CP:3
     je @@secondaryShootPressed
+	jmp @@endSkillCheck
+
+@@checkGKSkills:
+    cmp ah, 2Eh ; C (Regenerate Heart) CP: 9
+    je @@regenerateHeart
+    cmp ah, 2Dh ; X (Freeze) CP: 5
+    je @@freezePressed
+	cmp ah, 2Ch ; Z (AOE Enable) CP: 3
+	je @@enableAOE
+@@endSkillCheck:
+
 
     jmp @@printShooterAgain
 
@@ -1117,7 +1133,9 @@ proc PlayGame
 	push ShootingHeight
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	mov al, BlueColor
+	
+	call BulletColor
+
 	cmp [byte ptr AOEEnabled], 1
 	jne @@normalColor
 	mov al, OrangeColor
@@ -1156,7 +1174,9 @@ proc PlayGame
 	push ax
 	push [word ptr PlayerBulletLineLocation]
 	push [word ptr PlayerShootingRowLocation]
-	mov al, BlueColor
+
+	call BulletColor
+
 	cmp [byte ptr AOEEnabled], 1
 	jne @@normalColorMove
 	mov al, OrangeColor
@@ -1445,7 +1465,8 @@ proc PlayGame
 	push 54
 	call Delay
 
-@@procEnd:	push [RShieldFileHandle]
+@@procEnd:	
+	push [RShieldFileHandle]
 	call CloseFile
 
 	push [SShieldFileHandle]
@@ -1486,3 +1507,15 @@ proc PlayGame
 
 	ret
 endp PlayGame
+
+proc BulletColor
+	; Ship Select Bullet Color
+	cmp [byte ptr ShipSelect], 0
+	jne @@bulletGK	
+	mov al, BlueColor
+	jmp @@endBulletSelect
+@@bulletGK:
+	mov al, WhiteColor
+@@endBulletSelect:
+	ret
+endp BulletColor
