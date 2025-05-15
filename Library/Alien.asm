@@ -788,47 +788,53 @@ KillAlien:
     cmp [byte ptr DebugBool], 1
     jne @@skipDebugPrint
 
-    ; Print all debug info at 0,0
+    ; Calculate row/col and print debug
     push ax
     push bx
-    
-    ; Set cursor to top-left corner
-    xor bh, bh      
-    xor dx, dx      
-    mov ah, 2       
+    push dx
+
+    ; Set cursor position
+    xor bh, bh
+    xor dx, dx
+    mov ah, 2
     int 10h
-    
-    ; Calculate and print row,col
+
+    ; Calculate row and column
     mov ax, bx
     mov bl, 8
-    div bl          ; AL = row, AH = col
+    div bl      ; AL = row number (0-2), AH = column number (0-7)
+    push ax     ; Save row/col values
     
-    mov dl, al      ; Print row
+    ; Print row
+    mov dl, al
     add dl, '0'
     mov ah, 2
     int 21h
     
-    mov dl, ','     ; Print comma
+    ; Print comma
+    mov dl, ','
     int 21h
     
-    mov dl, ah      ; Print column
+    ; Print column (preserved in stack)
+    pop ax      ; Restore the division result
+    mov dl, ah  ; Get column number
     add dl, '0'
-    int 21h
-
-    mov dl, ' '     ; Print space
+    mov ah, 2
     int 21h
     
-    mov dl, '['     ; Print opening bracket
+    ; Print remaining aliens
+    mov dl, ' '
     int 21h
-    
-    mov al, [AliensLeftAmount]  ; Print aliens remaining
+    mov dl, '['
+    int 21h
+    mov al, [AliensLeftAmount]
     add al, '0'
     mov dl, al
     int 21h
-    
-    mov dl, ']'     ; Print closing bracket
+    mov dl, ']'
     int 21h
 
+    pop dx
     pop bx
     pop ax
 
