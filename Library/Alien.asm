@@ -14,132 +14,113 @@ CODESEG
 ; Starting at the location saved in memory
 ; ---------------------------------------------------------
 proc PrintAliens
-	push bp
-	mov bp, sp
-	;create local variables for line+row:
-	sub sp, 4
-	;line: bp - 2
-	;row: bp - 4
+    push bp
+    mov bp, sp
+    sub sp, 4
 
-	mov ax, [AliensPrintStartLine]
-	mov [bp - 2], ax
+    mov ax, [AliensPrintStartLine]
+    mov [bp - 2], ax
+    xor bx, bx
 
-	xor bx, bx ;current Alien #
+@@outerLoopStart:
+    mov cx, 3      ; outer loop counter
+@@rowLoop:
+    push cx
+    mov ax, [AliensPrintStartRow]
+    mov [bp - 4], ax
+    mov cx, 8      ; inner loop counter
 
-	mov cx, 3
-@@printAliensLine:
-	push cx
-
-	mov ax, [AliensPrintStartRow]
-	mov [bp - 4], ax
-
-	mov cx, 8
-@@printAlien:	push cx
-	push bx
-
+@@alienLoop:
+    push cx
+    push bx
+    
     cmp [byte ptr AliensStatusArray + bx], 0
-    je @@printBlackAlien
-
+    je @@doPrintBlack
     cmp [byte ptr AliensStatusArray + bx], 2
-    je @@continueAlien
+    je @@nextAlien
+    cmp [byte ptr FreezeActive], 1
+    je @@doPrintFrozen
+    jmp @@doPrintNormal
 
-	;Print Alien (check for freeze first):
-	cmp [byte ptr FreezeActive], 1
-	jne @@printNormal
-
-	; Frozen aliens based on level
-	mov al, [byte ptr Level]
-	cmp al, 4
-	jb @@frozen1
-	cmp al, 7
-	jb @@frozen2
-	; Level >= 7
-	push [word ptr FAlien3FileHandle]
-	jmp @@printFrozen
-@@frozen2:
-	push [word ptr FAlien2FileHandle]
-	jmp @@printFrozen
-@@frozen1:
-	push [word ptr FAlienFileHandle]
-
-@@printFrozen:
-	push FAlienLength
-	push FAlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
-	jmp @@continueAlien
-
-@@printNormal:
-	; Normal aliens based on level
-	mov al, [byte ptr Level]
-	cmp al, 4
-	jb @@normal1
-	cmp al, 7
-	jb @@normal2
-	; Level >= 7
-	push [word ptr Alien3FileHandle]
-	jmp @@printNormalAlien
-@@normal2:
-	push [word ptr Alien2FileHandle]
-	jmp @@printNormalAlien
-@@normal1:
-	push [word ptr AlienFileHandle]
-
-@@printNormalAlien:
-	push AlienLength
-	push AlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
-	jmp @@continueAlien
-
-@@continueAlien:
-    pop bx
-    inc bx
-	pop cx
-	add [word ptr bp - 4], 36 ;set location for next Alien
-
-	dec cx              ; Decrement inner loop counter 
-	jnz @@printAlien   ; Continue if not zero
-
-	add [word ptr bp - 2], 20 ;Set location for next line
-
-	pop cx
-	dec cx              ; Decrement outer loop counter
-	jnz @@printAliensLine   ; Continue if not zero
-
-	add sp, 4
-
-	pop bp
-	ret
-
-@@printBlackAlien:
-    ; Print black rectangle for dead aliens:
-	mov [byte ptr AliensStatusArray + bx], 2
+@@doPrintBlack:
+    mov [byte ptr AliensStatusArray + bx], 2
     push 42
     push AlienHeight
-	mov ax, [bp - 2]
-	sub ax, 4
-	push ax
-	mov ax, [bp - 4]
-	sub ax, 4
-	push ax
+    mov ax, [bp - 2]
+    sub ax, 4
+    push ax
+    mov ax, [bp - 4]
+    sub ax, 4
+    push ax
     push BlackColor
     call PrintColor
-	jmp @@continueAlien
+    jmp @@nextAlien
 
-@@printFreezeAlien:
-	push [word ptr FAlienFileHandle]
-	push FAlienLength
-	push FAlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
-	jmp @@continueAlien
+@@doPrintFrozen:
+    ; Frozen alien logic
+    mov al, [byte ptr Level]
+    cmp al, 4
+    jae @@frozenLevels
+    push [word ptr FAlienFileHandle]
+    jmp @@printFrozen
+
+@@frozenLevels:
+    cmp al, 7
+    jae @@frozen3
+    push [word ptr FAlien2FileHandle]
+    jmp @@printFrozen
+@@frozen3:
+    push [word ptr FAlien3FileHandle]
+
+@@printFrozen:
+    push FAlienLength
+    push FAlienHeight
+    push [word ptr bp - 2]
+    push [word ptr bp - 4]
+    push offset FileReadBuffer
+    call PrintBMP
+    jmp @@nextAlien
+
+@@doPrintNormal:
+    ; Normal alien logic
+    mov al, [byte ptr Level]
+    cmp al, 4
+    jae @@normalLevels
+    push [word ptr AlienFileHandle]
+    jmp @@printNormal
+
+@@normalLevels:
+    cmp al, 7
+    jae @@normal3
+    push [word ptr Alien2FileHandle]
+    jmp @@printNormal
+@@normal3:
+    push [word ptr Alien3FileHandle]
+
+@@printNormal:
+    push AlienLength
+    push AlienHeight
+    push [word ptr bp - 2]
+    push [word ptr bp - 4]
+    push offset FileReadBuffer
+    call PrintBMP
+
+@@nextAlien:
+    pop bx
+    inc bx
+    pop cx
+    add [word ptr bp - 4], 36
+    dec cx
+    jnz @@alienLoop
+
+    add [word ptr bp - 2], 20
+    pop cx
+    dec cx
+    jnz @@rowLoop
+
+    add sp, 4
+    pop bp
+    ret
 endp PrintAliens
 
 
@@ -254,17 +235,8 @@ proc CheckAndMoveAliens
 	cmp [byte ptr DebugBool], 1
 	jne @@skipDebug
 
-    ; Print aliens remaining count
-    xor bh, bh      ; Page 0
-    mov dh, 1       ; Row 1
-    mov dl, 35      ; Column 35
-    mov ah, 2       ; Set cursor position
-    int 10h
-
-    mov al, [AliensLeftAmount]
-    add al, '0'     ; Convert to ASCII
-    mov ah, 0Eh     ; Teletype output
-    int 10h         ; Print the number
+    ; Reset cursor and clear old text first (moved to KillAlien)
+    jmp @@checkMovement
 
 @@skipDebug:
     ; Check and update freeze state first
@@ -598,8 +570,7 @@ proc CheckAndHitAlien
     jmp @@doColumnClear
 
 @@normalHitDetection:
-    ;Check if Alien hit:
-    ;Check above:
+    ; Check if Alien hit using the same checks as secondary bullet
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     dec dx
@@ -608,9 +579,9 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
-    ;Check below:
+    ; Check below:
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     add dx, 4
@@ -619,19 +590,9 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
-    mov ah, 0Dh
-    mov dx, [PlayerBulletLineLocation]
-    sub dx, 3
-    mov cx, [PlayerShootingRowLocation]
-    mov bh, 0
-    int 10h
-
-    cmp al, GreenColor
-    je @@hitAlien
-
-    ;Check from left
+    ; Check from left
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     mov cx, [PlayerShootingRowLocation]
@@ -640,9 +601,9 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
-    ;Check from right
+    ; Check from right
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     mov cx, [PlayerShootingRowLocation]
@@ -651,34 +612,61 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
     jmp @@procEnd
 
-@@hitAlien:
-    ; Calculate grid position and get target index (keep existing code)
+@@calculateHitPosition:
+    ; Calculate hit position using boundary checking
     mov ax, [PlayerBulletLineLocation]
     sub ax, [AliensPrintStartLine]
-    mov bl, 20
-    div bl
-    mov ah, 0  
-    mov bx, ax      ; Row number in bx
 
+    cmp ax, 22
+    jb @@hitInLine0
+
+    cmp ax, 0FFE0h
+    ja @@hitInLine0
+
+    cmp ax, 42
+    jb @@hitInLine1
+
+    push 2
+    jmp @@checkHitRow
+
+@@hitInLine0:
+    push 0
+    jmp @@checkHitRow
+
+@@hitInLine1:
+    push 1
+
+@@checkHitRow:
     mov ax, [PlayerShootingRowLocation]
     sub ax, [AliensPrintStartRow]
-    mov cl, 36
-    div cl
-    mov cl, al      ; Column number in cl
+    add ax, 2
 
-    ; Convert to alien array index
-    mov al, bl
-    mov bl, 8
-    mul bl
-    add al, cl
-    mov bl, al      ; Target index in bl
-    xor bh, bh      
-    
-    ; Check if AOE attack
+    cmp ax, 0FFE0h
+    jb @@setForRowFind
+
+    xor cx, cx
+    jmp @@rowFound
+
+@@setForRowFind:
+    xor cx, cx
+    mov dx, 28
+@@findRow:
+    cmp ax, dx
+    jb @@rowFound
+    add dx, 36
+    inc cx
+    jmp @@findRow
+
+@@rowFound:
+    pop bx
+    shl bx, 3
+    add bx, cx
+
+    ; Now check for AOE
     cmp [byte ptr AOEEnabled], 1
     jne @@normalKill
 
@@ -813,6 +801,61 @@ KillAlien:
 	mov [byte ptr AliensStatusArray + bx], 0
 	dec [byte ptr AliensLeftAmount]
 	
+    cmp [byte ptr DebugBool], 1
+    jne @@skipDebugPrint
+
+; Debugging
+    ; Calculate row/col and print debug
+    push ax
+    push bx
+    push dx
+
+    ; Set cursor position
+    xor bh, bh
+    xor dx, dx
+    mov ah, 2
+    int 10h
+
+    ; Calculate row and column
+    mov ax, bx
+    mov bl, 8
+    div bl      ; AL = row number (0-2), AH = column number (0-7)
+    push ax     ; Save row/col values
+    
+    ; Print row
+    mov dl, al
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    ; Print comma
+    mov dl, ','
+    int 21h
+    
+    ; Print column (preserved in stack)
+    pop ax      ; Restore the division result
+    mov dl, ah  ; Get column number
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    ; Print remaining aliens
+    mov dl, ' '
+    int 21h
+    mov dl, '['
+    int 21h
+    mov al, [AliensLeftAmount]
+    add al, '0'
+    mov dl, al
+    int 21h
+    mov dl, ']'
+    int 21h
+
+    pop dx
+    pop bx
+    pop ax
+
+@@skipDebugPrint:
 	;Increase and update combo upon consecutive hit 
 	call ValidateCombo ; #Jieco
 	call DisplayCombo
@@ -941,11 +984,6 @@ proc CheckAndHitAlienSecondary
 @@hitAlien:
     call playSoundAlien
 
-	;set cursor to top left
-	xor bh, bh
-	xor dx, dx
-	mov ah, 2
-	int 10h
     ; Calculate hit position
     mov ax, [SecondaryBulletLineLocation]
     sub ax, [AliensPrintStartLine]
