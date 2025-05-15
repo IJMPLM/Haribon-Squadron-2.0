@@ -194,7 +194,6 @@ proc PrintMainMenu
 	mov cx, 1
 	mov dx, offset FileReadBuffer
 	int 21h
-
 	mov al, [FileReadBuffer]
 	cmp ax, [Score]
 	ja @@printMenu ;if current score is lower than 5th place, don't ask
@@ -210,6 +209,19 @@ proc PrintMainMenu
 
 	push [AskSaveFileHandle]
 	call CloseFile
+
+	; Reload space background files since they may have been closed
+	push offset SpaceBgFileName
+	push offset SpaceBgFileHandle
+	call OpenFile
+	
+	push offset SpaceBg2FileName 
+	push offset SpaceBg2FileHandle
+	call OpenFile
+	
+	push offset SpaceBg3FileName
+	push offset SpaceBg3FileHandle
+	call OpenFile
 
 @@askYN:
 	xor ah, ah
