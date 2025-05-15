@@ -621,17 +621,24 @@ proc CheckAndHitAlien
     mov ax, [PlayerBulletLineLocation]
     sub ax, [AliensPrintStartLine]
 
+    ; Check for line 0
     cmp ax, 22
     jb @@hitInLine0
 
+    ; Check if invalid range
     cmp ax, 0FFE0h
     ja @@hitInLine0
 
+    ; Check for line 1
     cmp ax, 42
     jb @@hitInLine1
 
-    push 2
-    jmp @@checkHitRow
+    ; Check for line 2
+    cmp ax, 62
+    jb @@hitInLine2
+
+    ; If we get here, no valid line hit
+    jmp @@bulletCollide
 
 @@hitInLine0:
     push 0
@@ -639,6 +646,11 @@ proc CheckAndHitAlien
 
 @@hitInLine1:
     push 1
+    jmp @@checkHitRow
+
+@@hitInLine2:
+    push 2
+    jmp @@checkHitRow
 
 @@checkHitRow:
     mov ax, [PlayerShootingRowLocation]
@@ -785,6 +797,58 @@ proc CheckAndHitAlien
     mov [word ptr PlayerShootingRowLocation], 0
     mov [word ptr LaserRow], 0
 	mov [byte ptr LaserEnabled], ?
+    jmp @@procEnd
+
+@@bulletCollide:
+    cmp [byte ptr DebugBool], 1
+    jne @@collideNoDebug
+
+; Debugging
+    ; Set cursor position
+    xor bh, bh
+    xor dx, dx
+    mov ah, 2
+    int 10h
+
+    ; Print row
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    
+    @@collideNoDebug:
+
+    push [SplatterFileHandle]
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+
+    push 5
+    call Delay
+
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr PlayerBulletLineLocation]
+	push [word ptr PlayerShootingRowLocation]
+	push BlackColor
+	call PrintColor
+
+    mov [byte ptr PlayerShootingExists], 0
+	mov [word ptr PlayerBulletLineLocation], 0
+	mov [word ptr PlayerShootingRowLocation], 0
 
 @@procEnd:
     ret
@@ -997,8 +1061,12 @@ proc CheckAndHitAlienSecondary
     cmp ax, 42
     jb @@hitInLine1
 
-    push 2
-    jmp @@checkhitRow
+    ; Check for line 2
+    cmp ax, 62
+    jb @@hitInLine2
+
+    ; If we get here, no valid line hit
+    jmp @@bulletCollide
 
 @@hitInLine0:
     push 0
@@ -1006,6 +1074,10 @@ proc CheckAndHitAlienSecondary
 
 @@hitInLine1:
     push 1
+
+@@hitInLine2:
+    push 2
+    jmp @@checkHitRow
 
 @@checkhitRow:
     mov ax, [SecondaryShootingRowLocation]
@@ -1095,6 +1167,58 @@ proc CheckAndHitAlienSecondary
 	push ax
 	push BlackColor
 	call PrintColor
+    jmp @@procEnd
+
+@@bulletCollide:
+    cmp [byte ptr DebugBool], 1
+    jne @@collideNoDebug
+
+; Debugging
+    ; Set cursor position
+    xor bh, bh
+    xor dx, dx
+    mov ah, 2
+    int 10h
+
+    ; Print row
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    mov dl, '+'
+    int 21h
+    
+    @@collideNoDebug:
+
+    push [SplatterFileHandle]
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr SecondaryBulletLineLocation]
+	push [word ptr SecondaryShootingRowLocation]
+	push offset FileReadBuffer
+	call PrintBMP
+
+    push 5
+    call Delay
+
+	push SplatterLength
+	push SplatterHeight
+	push [word ptr SecondaryBulletLineLocation]
+	push [word ptr SecondaryShootingRowLocation]
+	push BlackColor
+	call PrintColor
+
+	mov [byte ptr SecondaryShootingExists], 0
+	mov [word ptr SecondaryBulletLineLocation], 0
+	mov [word ptr SecondaryShootingRowLocation], 0
 
 @@procEnd:
     ret
