@@ -235,17 +235,8 @@ proc CheckAndMoveAliens
 	cmp [byte ptr DebugBool], 1
 	jne @@skipDebug
 
-    ; Print aliens remaining count
-    xor bh, bh      ; Page 0
-    mov dh, 1       ; Row 1
-    mov dl, 35      ; Column 35
-    mov ah, 2       ; Set cursor position
-    int 10h
-
-    mov al, [AliensLeftAmount]
-    add al, '0'     ; Convert to ASCII
-    mov ah, 0Eh     ; Teletype output
-    int 10h         ; Print the number
+    ; Reset cursor and clear old text first (moved to KillAlien)
+    jmp @@checkMovement
 
 @@skipDebug:
     ; Check and update freeze state first
@@ -794,6 +785,54 @@ KillAlien:
 	mov [byte ptr AliensStatusArray + bx], 0
 	dec [byte ptr AliensLeftAmount]
 	
+    cmp [byte ptr DebugBool], 1
+    jne @@skipDebugPrint
+
+    ; Print all debug info at 0,0
+    push ax
+    push bx
+    
+    ; Set cursor to top-left corner
+    xor bh, bh      
+    xor dx, dx      
+    mov ah, 2       
+    int 10h
+    
+    ; Calculate and print row,col
+    mov ax, bx
+    mov bl, 8
+    div bl          ; AL = row, AH = col
+    
+    mov dl, al      ; Print row
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    mov dl, ','     ; Print comma
+    int 21h
+    
+    mov dl, ah      ; Print column
+    add dl, '0'
+    int 21h
+
+    mov dl, ' '     ; Print space
+    int 21h
+    
+    mov dl, '['     ; Print opening bracket
+    int 21h
+    
+    mov al, [AliensLeftAmount]  ; Print aliens remaining
+    add al, '0'
+    mov dl, al
+    int 21h
+    
+    mov dl, ']'     ; Print closing bracket
+    int 21h
+
+    pop bx
+    pop ax
+
+@@skipDebugPrint:
 	;Increase and update combo upon consecutive hit 
 	call ValidateCombo ; #Jieco
 	call DisplayCombo
