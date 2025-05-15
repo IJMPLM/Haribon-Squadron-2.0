@@ -1337,6 +1337,17 @@ proc PlayGame
 	call PrintBMP
 
 @@checkShotStatus:
+	; Update invincibility counter if active
+	cmp [InvincibleCounter], 0
+	je @@checkSecondaryShot
+	
+	dec [InvincibleCounter]
+	cmp [InvincibleCounter], 0
+	jne @@checkSecondaryShot
+	
+	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
+
+@@checkSecondaryShot:
     ; Handle secondary shot movement and clearing
     cmp [byte ptr SecondaryShootingExists], 1
     jne @@checkMainShot
@@ -1365,16 +1376,6 @@ proc PlayGame
     ; Check for alien hits
     call CheckAndHitAlienSecondary
     jmp @@checkMainShot
-	
-	; Update invincibility counter if active
-	cmp [InvincibleCounter], 0
-	je @@checkMainShot
-	
-	dec [InvincibleCounter]
-	cmp [InvincibleCounter], 0
-	jne @@checkMainShot
-	
-	mov [byte ptr InvincibleActive], 0   ; Disable invincibility when counter reaches 0
     
 @@removeSecondaryShot:
     mov [byte ptr SecondaryShootingExists], 0
