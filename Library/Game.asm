@@ -212,70 +212,8 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
-@@printGLSkill1:
-	push offset GLSkill1FileName
-	push offset GLSkill1FileHandle	
-	call OpenFile
-
-	push [GLSkill1FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill1PrintStartLine
-	push Skill1PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLSkill1FileHandle]
-	call CloseFile
-
-@@printGLSkill2:
-	push offset GLSkill2FileName
-	push offset GLSkill2FileHandle	
-	call OpenFile
-
-	push [GLSkill2FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill2PrintStartLine
-	push Skill2PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLSkill2FileHandle]
-	call CloseFile
-
-@@printGLSkill3:
-	push offset GLSkill3FileName
-	push offset GLSkill3FileHandle	
-	call OpenFile
-
-	push [GLSkill3FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill3PrintStartLine
-	push Skill3PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLSkill3FileHandle]
-	call CloseFile
-
-
-; @@printSkills:		; #Skills
-; 	push offset SkillsFileName
-; 	push offset SkillsFileHandle	
-; 	call OpenFile
-
-; 	push [SkillsFileHandle]
-; 	push SkillsLength
-; 	push SkillsHeight
-; 	push SkillsPrintStartLine
-; 	push SkillsPrintStartRow
-; 	push offset FileReadBuffer
-; 	call PrintBMP
-
-; 	push [SkillsFileHandle]
-; 	call CloseFile
+	;Print skills
+	; call PrintSkills ; !this would be dynamically updated upon called
 
 @@printBattery:
 	push offset BatteryFileName
@@ -320,9 +258,186 @@ proc PrintStatsArea
 	mov dx, offset ScoreString
 	int 21h
 
+@ReprintDynamicLabels: ; #Jieco for hud 
+	call UpdateLives	
+	call UpdateScoreStat
+	call UpdatePlayerStats
+  
+    call CheckSkillAvailability  
+    
+	call UpdateSkills	
+
 	ret
 endp PrintStatsArea
 
+; --------------------------------------------------------
+; Prints and Update skills of the selected ship
+; --------------------------------------------------------
+proc PrintSkills
+	; GL = 0, GK = 1
+	cmp [byte ptr ShipSelect], 0
+	jne @@printGKSkill1
+
+@@printGLSkill1:
+	push offset GLBulletI_FileName
+	push offset GLBulletI_FileHandle	
+	call OpenFile
+
+	push [GLBulletI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLBulletI_FileHandle]
+	call CloseFile
+
+@@printGLSkill2:
+	push offset GLLaserI_FileName
+	push offset GLLaserI_FileHandle	
+	call OpenFile
+
+	push [GLLaserI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill2PrintStartLine
+	push Skill2PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLLaserI_FileHandle]
+	call CloseFile
+
+@@printGLSkill3:
+	push offset GLChargeI_FileName
+	push offset GLChargeI_FileHandle	
+	call OpenFile
+
+	push [GLChargeI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill3PrintStartLine
+	push Skill3PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLChargeI_FileHandle]
+	call CloseFile
+	ret
+
+@@printGKSkill1:
+	push offset GKLEDI_FileName
+	push offset GKLEDI_FileHandle	
+	call OpenFile
+
+	push [GKLEDI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKLEDI_FileHandle]
+	call CloseFile
+
+@@printGKSkill2:
+	push offset GKFreezeI_FileName
+	push offset GKFreezeI_FileHandle	
+	call OpenFile
+
+	push [GKFreezeI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill2PrintStartLine
+	push Skill2PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKFreezeI_FileHandle]
+	call CloseFile
+
+@@printGKSkill3:
+	push offset GKShieldI_FileName
+	push offset GKShieldI_FileHandle	
+	call OpenFile
+
+	push [GKShieldI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill3PrintStartLine
+	push Skill3PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKShieldI_FileHandle]
+	call CloseFile
+
+@@endPrintSkills:
+	ret
+endp PrintSkills
+
+proc UpdateSkills
+	; GL = 0, GK = 1
+	cmp [byte ptr ShipSelect], 0
+	jne @@GKSkills
+
+@@GLSkills:
+@@Validate2Bullet:
+	cmp [byte ptr CAN_USE_INVINCIBLE], 1
+	je @@Activate2Bullet
+
+@@Deactivate2Bullet:
+	push offset GLBulletI_FileName
+	push offset GLBulletI_FileHandle	
+	call OpenFile
+
+	push [GLBulletI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLBulletI_FileHandle]
+	call CloseFile
+  
+	ret
+
+@@Activate2Bullet:
+	push offset GLBulletA_FileName
+	push offset GLBulletA_FileHandle	
+	call OpenFile
+
+	push [GLBulletA_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLBulletA_FileHandle]
+	call CloseFile
+	ret ; ph
+
+@@ValidateLaser:
+	cmp [byte ptr CAN_USE_INVINCIBLE], 0
+	; jne @@printGKSkill1
+@@ValidateCharge:
+	cmp [byte ptr CAN_USE_REGEN], 0
+	; jne @@printGKSkill1
+
+@@GKSkills:
+	ret
+
+@@endUpdateSkills:
+
+	ret
+endp UpdateSkills
 
 ;----------------------------------------------
 ; Updates the amount of lives shown on screen
@@ -733,9 +848,11 @@ proc PlayGame
 	push offset SplatterFileHandle
 	call OpenFile
 
+	; GL = 0, GK = 1
 	cmp [byte ptr ShipSelect], 0
 	jne @@openGK
 	
+@@openGL:
 	push offset GLS0FileName
 	push offset ShooterReloadFileHandle
 	call OpenFile
@@ -753,7 +870,6 @@ proc PlayGame
 	call OpenFile
 
 @@endShipSelect:
-
 	push offset SShieldFileName
 	push offset SShieldFileHandle
 	call OpenFile
@@ -770,9 +886,8 @@ proc PlayGame
 @@stageOnePrint:
 	call PrintBackground
 	call PrintStatsArea
+	call PrintSkills
 	call UpdatePlayerStats
-	call UpdateLives
-	; call UpdateComboStat ; #Jieco for debugging
 	call DisplayCombo
 
 	call CheckAndMoveAliens
@@ -874,9 +989,8 @@ proc PlayGame
     je @@freezePressed
 	cmp ah, 2Ch ; Z (AOE Enable) CP: 3
 	je @@enableAOE
+
 @@endSkillCheck:
-
-
     jmp @@printShooterAgain
 
 @@secondaryShootPressed:
@@ -894,7 +1008,6 @@ proc PlayGame
     jmp @@printShooterAgain
 
 @@invincibilityPressed:
-    call CheckSkillAvailability    ; Check if skills are available based on current combo
     cmp [byte ptr CAN_USE_INVINCIBLE], 0  ; Check if we have enough combo for invincibility
     je @@readKey                   ; If not enough combo, ignore key press
     cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
@@ -907,10 +1020,10 @@ proc PlayGame
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
 		call DisplayCombo				; Update combo display
+		; call UpdateSkills
     jmp @@readKey
 
 @@freezePressed:
-    call CheckSkillAvailability   
     cmp [byte ptr CAN_USE_FREEZE], 0    ; Check if we have enough combo for freeze
     je @@readKey                  ; If not enough combo, ignore key press
     cmp [byte ptr FreezeActive], 1  
@@ -922,6 +1035,7 @@ proc PlayGame
     sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
+		; call UpdateSkills
 		call DisplayCombo				; Update combo display
 
     ; Force redraw of aliens to show frozen state immediately
@@ -931,7 +1045,6 @@ proc PlayGame
     jmp @@readKey
 
 @@regenerateHeart:
-    call CheckSkillAvailability
     cmp [byte ptr CAN_USE_REGEN], 0     ; Check if we have enough combo for heart regen
     je @@readKey                  ; If not enough combo, ignore key press
     cmp [LivesRemaining], 3 ; Max lives is 3
@@ -943,11 +1056,11 @@ proc PlayGame
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
 		call DisplayCombo				; Update combo display
+		; call UpdateSkills
     call UpdateLives
     jmp @@readKey
 
 @@enableLaser:
-    call CheckSkillAvailability    ; Check if skills are available based on current combo
     cmp [byte ptr COMBO_VAL], 5    ; Check if we have enough combo for laser
     jb @@printShooterAgain        ; If not enough combo, ignore laser press
     cmp [byte ptr PlayerShootingExists], 0
@@ -957,6 +1070,7 @@ proc PlayGame
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
 		call DisplayCombo				; Update combo display
+		; call UpdateSkills
     jmp @@shootPressed
 
 @@enableAOE:
@@ -1189,7 +1303,8 @@ proc PlayGame
 	; #Jieco
 	call ResetCombo				; Resets combo
 	; call UpdateComboStat	; #Jieco for debugging 	
-	call DisplayCombo			; reflect changes on screen
+	; call DisplayCombo			; reflect changes on screen
+
 
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
@@ -1224,7 +1339,12 @@ proc PlayGame
 @@moveAliens:
 	call ClearAliensShots
 
+	; for re-displaying hud
+	call DisplayCombo
+	; call @@printShooterAgain		; prints shooter but flickers upon being called
+	
 	call CheckAndMoveAliens
+	call PrintStatsArea
 	
 	call CheckIfAliensReachedBottom
 	cmp ax, 1
