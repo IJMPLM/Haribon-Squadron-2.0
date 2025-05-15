@@ -11,16 +11,8 @@ Keyboard Input    -> Controller Input (DS4)
 - Esc               -> Button (Share)
 - I                 -> Up LeftStick
 - T                 -> Down LeftStick
-- Enter/P/Y         -> Button (Options)
+- Enter             -> Button (Options)
+- Z                 -> Button (Square)
+- X                 -> Button (Triangle)
+- C                 -> Button (O)
 
-Suggested Power Ups Configuration
-- Power Up 1 
-  Keyboard (Z)    -> Button (Square)
-- Power Up 2
-  Keyboard (X)    -> Button (Triangle)
-- Power Up 3
-  Keyboard (C)    -> Button (O)
-- Power Up 4
-  Keyboard (V)    -> Left Bumper
-- Power Up 5
-  Keyboard (B)    -> Right Bumper
