@@ -73,26 +73,45 @@ DATASEG
 	ExplosionLength					equ	32
 	ExplosionHeight					equ	32
 
-	SkillsFileName				db	'Assets/GLSkill1.bmp', 0
-	SkillsFileHandle			dw	?
+	; GL Skill 1:  Second Bullet
+	GLBulletI_FileName				db 'Assets/Bullet2I.bmp', 0
+	GLBulletI_FileHandle			dw	?
+	GLBulletA_FileName				db 'Assets/Bullet2A.bmp', 0
+	GLBulletA_FileHandle			dw	?
 
-	GLSkill1FileName				db 'Assets/GLSkill1.bmp', 0
-	GLSkill1FileHandle			dw	?
+	; GL Skill 2: Laser
+	GLLaserI_FileName				db 'Assets/LaserI.bmp', 0
+	GLLaserI_FileHandle			dw	?
+	GLLaserA_FileName				db 'Assets/LaserA.bmp', 0
+	GLLaserA_FileHandle			dw	?
 
-	GLSkill2FileName				db 'Assets/GLSkill2.bmp', 0
-	GLSkill2FileHandle			dw	?
+	; GL Skill 3: Charge
+	GLChargeI_FileName				db 'Assets/ChargeI.bmp', 0
+	GLChargeI_FileHandle			dw	?
+	GLChargeA_FileName				db 'Assets/ChargeA.bmp', 0
+	GLChargeA_FileHandle			dw	?
 
-	GLSkill3FileName				db 'Assets/GLSkill3.bmp', 0
-	GLSkill3FileHandle			dw	?
+	; GK Skill 1: LED
+	GKLEDI_FileName				db 'Assets/LEDI.bmp', 0
+	GKLEDI_FileHandle			dw	?
+	GKLEDA_FileName				db 'Assets/LEDA.bmp', 0
+	GKLEDA_FileHandle			dw	?
 
-	GKSkill1FileName				db 'Assets/GKSkill1.bmp', 0
-	GKSkill1FileHandle			dw	?
+	; GK Skill 2: Freeze
+	GKFreezeI_FileName				db 'Assets/FreezeI.bmp', 0
+	GKFreezeI_FileHandle			dw	?
+	GKFreezeA_FileName				db 'Assets/FreezeA.bmp', 0
+	GKFreezeA_FileHandle			dw	?
+	GKFreezeAc_FileName				db 'Assets/FreezeAc.bmp', 0
+	GKFreezeAc_FileHandle			dw	?
 
-	GKSkill2FileName				db 'Assets/GKSkill2.bmp', 0
-	GKSkill2FileHandle			dw	?
-
-	GKSkill3FileName				db 'Assets/GKSkill3.bmp', 0
-	GKSkill3FileHandle			dw	?
+	; GK Skill 3: Shield
+	GKShieldI_FileName				db 'Assets/ShieldI.bmp', 0
+	GKShieldI_FileHandle			dw	?
+	GKShieldA_FileName				db 'Assets/ShieldA.bmp', 0
+	GKShieldA_FileHandle			dw	?
+	GKShieldAc_FileName				db 'Assets/ShieldAc.bmp', 0
+	GKShieldAc_FileHandle			dw	?
 
 	SkillLength						equ 16
 	SkillHeight						equ 16
