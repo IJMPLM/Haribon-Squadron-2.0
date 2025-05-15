@@ -1165,6 +1165,9 @@ proc PlayGame
     jmp @@readKey
 
 @@regenerateHeart:
+	cmp [LivesRemaining], 3 ; Max lives is 3
+    jae @@readKey
+
     cmp [byte ptr UnliSkills], 1
     jmp @@skillFunctionRegenerate
 	
