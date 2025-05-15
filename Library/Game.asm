@@ -320,6 +320,11 @@ proc PrintStatsArea
 	mov dx, offset ScoreString
 	int 21h
 
+@ReprintDynamicLabels: ; #Jieco for hud 
+	call UpdateLives	
+	call UpdateScoreStat
+	call UpdatePlayerStats
+
 	ret
 endp PrintStatsArea
 
@@ -771,8 +776,6 @@ proc PlayGame
 	call PrintBackground
 	call PrintStatsArea
 	call UpdatePlayerStats
-	call UpdateLives
-	; call UpdateComboStat ; #Jieco for debugging
 	call DisplayCombo
 
 	call CheckAndMoveAliens
@@ -1189,7 +1192,8 @@ proc PlayGame
 	; #Jieco
 	call ResetCombo				; Resets combo
 	; call UpdateComboStat	; #Jieco for debugging 	
-	call DisplayCombo			; reflect changes on screen
+	; call DisplayCombo			; reflect changes on screen
+
 
 	mov [byte ptr PlayerShootingExists], 0
 	mov [word ptr PlayerBulletLineLocation], 0
@@ -1224,6 +1228,11 @@ proc PlayGame
 @@moveAliens:
 	call ClearAliensShots
 
+	; for re-displaying hud
+	call DisplayCombo
+	; call @@printShooterAgain		; prints shooter but flickers upon being called
+	call PrintStatsArea
+	
 	call CheckAndMoveAliens
 	
 	call CheckIfAliensReachedBottom
