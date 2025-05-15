@@ -261,7 +261,6 @@ proc PrintStatsArea
 	call UpdateScoreStat
 	call UpdatePlayerStats
     call CheckSkillAvailability  
-	call CheckSkillAvailability    
 	call UpdateSkills	
 
 	ret
@@ -1144,11 +1143,6 @@ proc PlayGame
 	@@skillFunctionInvincibility:
     mov [byte ptr InvincibleActive], 1   
     mov [word ptr InvincibleCounter], 36
-    mov [word ptr InvincibleCounter], 36 ; 2 seconds
-    sub [byte ptr COMBO_VAL], SHIELD_COST ; Reduce combo by cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		call DisplayCombo				; Update combo display
     jmp @@readKey
 
 @@freezePressed:
@@ -1166,12 +1160,6 @@ proc PlayGame
     @@skillFunctionFreeze:
     mov [byte ptr FreezeActive], 1   
     mov [word ptr FreezeCounter], 54
-    sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		call DisplayCombo				; Update combo display
-
-    ; Force redraw of aliens to show frozen state immediately
     call ClearAliens
     call PrintAliens
     jmp @@readKey
@@ -1187,10 +1175,6 @@ proc PlayGame
 
 	@@skillFunctionRegenerate:
     inc [LivesRemaining]
-    sub [byte ptr COMBO_VAL], REGEN_COST ; Reduce combo by cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		call DisplayCombo				; Update combo display
     call UpdateLives
     jmp @@readKey
 
@@ -1208,10 +1192,6 @@ proc PlayGame
 
 	@@skillFunctionLaser:
     mov [byte ptr LaserEnabled], 1
-    sub [byte ptr COMBO_VAL], 5    ; Deduct combo cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		call DisplayCombo				; Update combo display
     jmp @@shootPressed
 
 @@enableAOE:
