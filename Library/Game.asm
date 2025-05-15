@@ -262,6 +262,7 @@ proc PrintStatsArea
 	call UpdateLives	
 	call UpdateScoreStat
 	call UpdatePlayerStats
+	call UpdateSkills	
 
 	ret
 endp PrintStatsArea
@@ -376,7 +377,61 @@ proc PrintSkills
 endp PrintSkills
 
 proc UpdateSkills
-	
+	; GL = 0, GK = 1
+	cmp [byte ptr ShipSelect], 0
+	jne @@GKSkills
+
+@@GLSkills:
+@@Validate2Bullet:
+	cmp [byte ptr CAN_USE_FREEZE], 1
+	jne @@Activate2Bullet
+
+@@Deactivate2Bullet:
+	push offset GLBulletI_FileName
+	push offset GLBulletI_FileHandle	
+	call OpenFile
+
+	push [GLBulletI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLBulletI_FileHandle]
+	call CloseFile
+	ret
+
+@@Activate2Bullet:
+	push offset GLBulletA_FileName
+	push offset GLBulletA_FileHandle	
+	call OpenFile
+
+	push [GLBulletA_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLBulletA_FileHandle]
+	call CloseFile
+	ret ; ph
+
+@@ValidateLaser:
+	cmp [byte ptr CAN_USE_INVINCIBLE], 0
+	; jne @@printGKSkill1
+@@ValidateCharge:
+	cmp [byte ptr CAN_USE_REGEN], 0
+	; jne @@printGKSkill1
+
+@@GKSkills:
+
+
+@endUpdateSkills:
+	ret
 endp UpdateSkills
 
 ;----------------------------------------------
@@ -962,6 +1017,7 @@ proc PlayGame
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
 		call DisplayCombo				; Update combo display
+		; call UpdateSkills
     jmp @@readKey
 
 @@freezePressed:
@@ -977,6 +1033,7 @@ proc PlayGame
     sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
+		; call UpdateSkills
 		call DisplayCombo				; Update combo display
 
     ; Force redraw of aliens to show frozen state immediately
@@ -998,6 +1055,7 @@ proc PlayGame
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
 		call DisplayCombo				; Update combo display
+		; call UpdateSkills
     call UpdateLives
     jmp @@readKey
 
@@ -1012,6 +1070,7 @@ proc PlayGame
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
 		call DisplayCombo				; Update combo display
+		; call UpdateSkills
     jmp @@shootPressed
 
 @@enableAOE:
