@@ -15,13 +15,13 @@ DATASEG
 
 
 	; Skill Costs
-	BULLET2_COST			equ 1		 ; Cost for second bullet
-	LASER_COST				equ 1		 ; Cost for laser
-	SHIELD_COST				equ 1		 ; Cost for shield
+	BULLET2_COST			equ 3		 ; Cost for second bullet
+	LASER_COST				equ 5		 ; Cost for laser
+	SHIELD_COST				equ 7		 ; Cost for shield
 
-	LED_COST					equ 1		 ; Cost for AOE
-	FREEZE_COST     	equ 2    ; Cost for freeze
-	REGEN_COST      	equ 2    ; Cost for heart regeneration
+	LED_COST					equ 3		 ; Cost for AOE
+	FREEZE_COST     	equ 5    ; Cost for freeze
+	REGEN_COST      	equ 9    ; Cost for heart regeneration
 	
 	; Skill availability flags  
 	CAN_USE_BULLET2		db	0		 ; Flag if Second Bullet is available

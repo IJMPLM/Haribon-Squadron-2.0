@@ -276,20 +276,32 @@ proc UpdateSkills
 
 @@GLSkills:
 	call GLBullet
-	call GLLaser 
+	call GLLaser
+	cmp [byte ptr InvincibleActive], 1 
+	je @@GLShieldActivated
 	call GLShield
+	ret
+
+@@GLShieldActivated:
+	call GLActivatedShield
 	ret
 
 @@GKSkills:
 	call GKLED
 	call GKFreeze
+	cmp [byte ptr FreezeActive], 1 
+	je @@GKFreezeActivated
 	call GKCharge
+	ret
+
+@@GKFreezeActivated:
+	call GKActivatedFreeze
 	ret
 
 endp UpdateSkills
 
 proc GLBullet
-	cmp [byte ptr CAN_USE_SHIELD], 1 ; to be changed
+	cmp [byte ptr CAN_USE_BULLET2], 1 ; to be changed
 	je @@Activate2Bullet
 
 	@@Deactivate2Bullet:
@@ -331,7 +343,7 @@ proc GLBullet
 endp GLBullet
 
 proc GLLaser
-	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	cmp [byte ptr CAN_USE_LASER], 1	; to be changed
 	je @@ActivateLaser
 
 	@@DeactivateLaser:
@@ -415,8 +427,27 @@ proc GLShield
 
 endp GLShield
 
+proc GLActivatedShield
+	push offset GKShieldAc_FileName
+	push offset GKShieldAc_FileHandle	
+	call OpenFile
+
+	push [GKShieldAc_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill3PrintStartLine
+	push Skill3PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKShieldAc_FileHandle]
+	call CloseFile
+	ret
+endp GLActivatedShield
+
+
 proc GKLED
-	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	cmp [byte ptr CAN_USE_LED], 1	; to be changed
 	je @@ActivateLED
 
 	@@DeactivateLED: 
@@ -458,7 +489,7 @@ proc GKLED
 endp GKLED
 
 proc GKFreeze
-	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	cmp [byte ptr CAN_USE_FREEZE], 1	; to be changed
 	je @@ActivateFreeze
 
 	@@DeactivateFreeze: 
@@ -499,8 +530,26 @@ proc GKFreeze
 		ret
 endp GKFreeze
 
+proc GKActivatedFreeze
+	push offset GKFreezeAc_FileName
+	push offset GKFreezeAc_FileHandle	
+	call OpenFile
+
+	push [GKFreezeAc_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill2PrintStartLine
+	push Skill2PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKFreezeAc_FileHandle]
+	call CloseFile
+	ret
+endp GKActivatedFreeze
+
 proc GKCharge
-	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	cmp [byte ptr CAN_USE_REGEN], 1	; to be changed
 	je @@ActivateCharge
 
 	@@DeactivateCharge: 
@@ -1110,7 +1159,7 @@ proc PlayGame
     jne @@printShooterAgain
 
     cmp [byte ptr UnliSkills], 1
-    jmp @@skillFunctionBullet2
+    je @@skillFunctionBullet2
 	
     cmp [byte ptr CAN_USE_BULLET2], 0  
     je @@readKey                  
@@ -1133,7 +1182,7 @@ proc PlayGame
     je @@readKey
 
     cmp [byte ptr UnliSkills], 1
-    jmp @@skillFunctionInvincibility
+    je @@skillFunctionInvincibility
 	
     cmp [byte ptr CAN_USE_SHIELD], 0  
     je @@readKey                  
@@ -1150,7 +1199,7 @@ proc PlayGame
     je @@readKey
 
     cmp [byte ptr UnliSkills], 1
-    jmp @@skillFunctionFreeze
+    je @@skillFunctionFreeze
 	
     cmp [byte ptr CAN_USE_FREEZE], 0  
     je @@readKey                  
@@ -1166,7 +1215,7 @@ proc PlayGame
 
 @@regenerateHeart:
     cmp [byte ptr UnliSkills], 1
-    jmp @@skillFunctionRegenerate
+    je @@skillFunctionRegenerate
 	
     cmp [byte ptr CAN_USE_REGEN], 0  
     je @@readKey                  
@@ -1183,7 +1232,7 @@ proc PlayGame
     jne @@readKey
 
     cmp [byte ptr UnliSkills], 1
-    jmp @@skillFunctionLaser
+    je @@skillFunctionLaser
 	
     cmp [byte ptr CAN_USE_LASER], 0  
     je @@readKey                  
@@ -1196,7 +1245,7 @@ proc PlayGame
 
 @@enableAOE:
     cmp [byte ptr UnliSkills], 1
-    jmp @@skillFunctionAOE
+    je @@skillFunctionAOE
 	
     cmp [byte ptr CAN_USE_LED], 0  
     je @@readKey                  
