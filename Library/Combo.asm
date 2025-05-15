@@ -349,7 +349,34 @@ endp ResetCombo
 ;--------------------------------------------------------------------
 
 proc CheckSkillAvailability
-	; Check Regen Heart availability
+	; Check Bullet2 availability
+	mov al, [COMBO_VAL]
+	cmp al, BULLET2_COST
+	jae @@canBullet2
+	mov [byte ptr CAN_USE_BULLET2], 0
+	jmp @@checkLaser
+@@canBullet2:
+	mov [byte ptr CAN_USE_BULLET2], 1
+
+@@checkLaser:
+	mov al, [COMBO_VAL]
+	cmp al, LASER_COST
+	jae @@canLaser
+	mov [byte ptr CAN_USE_LASER], 0
+	jmp @@checkLED
+@@canLaser:
+	mov [byte ptr CAN_USE_LASER], 1
+
+@@checkLED:
+	mov al, [COMBO_VAL]
+	cmp al, LED_COST
+	jae @@canLED
+	mov [byte ptr CAN_USE_LED], 0
+	jmp @@checkRegen
+@@canLED:
+	mov [byte ptr CAN_USE_LED], 1
+
+@@checkRegen:
 	mov al, [COMBO_VAL]
 	cmp al, REGEN_COST
 	jae @@canRegen
@@ -389,20 +416,35 @@ proc CheckSkillAvailability
 	mov ah, 2   	; Set cursor position
 	int 10h
 
+    ; Print Bullet2 status
+    mov dl, [CAN_USE_BULLET2]
+    add dl, '0'
+    mov ah, 2
+    int 21h
     
-    ; Print Regen status
+    ; Print Laser status
+    mov dl, [CAN_USE_LASER]
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    ; Print LED status
+    mov dl, [CAN_USE_LED]
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    ; Print remaining statuses
     mov dl, [CAN_USE_REGEN]
     add dl, '0'
     mov ah, 2
     int 21h
     
-    ; Print Invincible status
     mov dl, [CAN_USE_SHIELD] 
     add dl, '0'
     mov ah, 2
     int 21h
     
-    ; Print Freeze status
     mov dl, [CAN_USE_FREEZE]
     add dl, '0'
     mov ah, 2
