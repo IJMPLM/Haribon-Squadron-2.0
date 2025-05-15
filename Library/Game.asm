@@ -290,7 +290,7 @@ proc UpdateSkills
 endp UpdateSkills
 
 proc GLBullet
-	cmp [byte ptr CAN_USE_INVINCIBLE], 1 ; to be changed
+	cmp [byte ptr CAN_USE_SHIELD], 1 ; to be changed
 	je @@Activate2Bullet
 
 	@@Deactivate2Bullet:
@@ -332,7 +332,7 @@ proc GLBullet
 endp GLBullet
 
 proc GLLaser
-	cmp [byte ptr CAN_USE_INVINCIBLE], 1	; to be changed
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
 	je @@ActivateLaser
 
 	@@DeactivateLaser:
@@ -374,7 +374,7 @@ proc GLLaser
 endp GLLaser
 
 proc GLShield
-	cmp [byte ptr CAN_USE_INVINCIBLE], 1	; to be changed
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
 	je @@ActivateShield
 
 	@@DeactivateShield: 
@@ -417,7 +417,7 @@ proc GLShield
 endp GLShield
 
 proc GKLED
-	cmp [byte ptr CAN_USE_INVINCIBLE], 1	; to be changed
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
 	je @@ActivateLED
 
 	@@DeactivateLED: 
@@ -459,7 +459,7 @@ proc GKLED
 endp GKLED
 
 proc GKFreeze
-	cmp [byte ptr CAN_USE_INVINCIBLE], 1	; to be changed
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
 	je @@ActivateFreeze
 
 	@@DeactivateFreeze: 
@@ -501,7 +501,7 @@ proc GKFreeze
 endp GKFreeze
 
 proc GKCharge
-	cmp [byte ptr CAN_USE_INVINCIBLE], 1	; to be changed
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
 	je @@ActivateCharge
 
 	@@DeactivateCharge: 
@@ -1136,7 +1136,7 @@ proc PlayGame
     cmp [byte ptr UnliSkills], 1
     jmp @@skillFunctionInvincibility
 	
-    cmp [byte ptr CAN_USE_INVINCIBLE], 0  
+    cmp [byte ptr CAN_USE_SHIELD], 0  
     je @@readKey                  
     sub [byte ptr COMBO_VAL], SHIELD_COST
 	call DisplayCombo
@@ -1145,7 +1145,7 @@ proc PlayGame
     mov [byte ptr InvincibleActive], 1   
     mov [word ptr InvincibleCounter], 36
     mov [word ptr InvincibleCounter], 36 ; 2 seconds
-    sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
+    sub [byte ptr COMBO_VAL], SHIELD_COST ; Reduce combo by cost
     ; #Jieco
 		; call UpdateComboStat  ; for debugging
 		call DisplayCombo				; Update combo display
