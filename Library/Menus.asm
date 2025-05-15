@@ -111,7 +111,7 @@ proc PrintMainMenu
 	xor ah, ah
 	int 16h
 
-	cmp ah, 19h ;P key
+	cmp ah, 1ch ;P key
 	je @@play
 
 	cmp ah, 17h ;I key
@@ -227,10 +227,10 @@ proc PrintMainMenu
 	xor ah, ah
 	int 16h
 
-	cmp ah, 31h ;N key
+	cmp ah, 01 ;N key
 	je @@printMenu
 
-	cmp ah, 15h ;Y key
+	cmp ah, 1ch ;Y key
 	jne @@askYN
 	
 	;ask user for name:
@@ -452,7 +452,7 @@ proc PrintShipSelection
 	cmp ah, 4bh ;left arrow
 	je @@printGLSelect
 
-	cmp ah, 1 ;Esc key
+	cmp ah, 01 ;Esc key
 	je @@exitShipSelection
 
 	cmp ah, 1ch ;enter key
