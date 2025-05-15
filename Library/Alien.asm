@@ -14,140 +14,113 @@ CODESEG
 ; Starting at the location saved in memory
 ; ---------------------------------------------------------
 proc PrintAliens
-	push bp
-	mov bp, sp
-	;create local variables for line+row:
-	sub sp, 4
-	;line: bp - 2
-	;row: bp - 4
+    push bp
+    mov bp, sp
+    sub sp, 4
 
-	mov ax, [AliensPrintStartLine]
-	mov [bp - 2], ax
+    mov ax, [AliensPrintStartLine]
+    mov [bp - 2], ax
+    xor bx, bx
 
-	xor bx, bx ;current Alien #
+@@outerLoopStart:
+    mov cx, 3      ; outer loop counter
+@@rowLoop:
+    push cx
+    mov ax, [AliensPrintStartRow]
+    mov [bp - 4], ax
+    mov cx, 8      ; inner loop counter
 
-	mov cx, 3
-@@printAliensLine:
-	push cx
-
-	mov ax, [AliensPrintStartRow]
-	mov [bp - 4], ax
-
-	mov cx, 8
-@@printAlien:	push cx
-	push bx
-
+@@alienLoop:
+    push cx
+    push bx
+    
     cmp [byte ptr AliensStatusArray + bx], 0
-    je @@printBlackAlien
-
+    je @@doPrintBlack
     cmp [byte ptr AliensStatusArray + bx], 2
-    je @@continueAlien
+    je @@nextAlien
+    cmp [byte ptr FreezeActive], 1
+    je @@doPrintFrozen
+    jmp @@doPrintNormal
 
-	;Print Alien (check for freeze first):
-	cmp [byte ptr FreezeActive], 1
-	jne @@printNormal
-
-	; Frozen aliens based on level
-	mov al, [byte ptr Level]
-	cmp al, 4
-	jb @@frozen1
-	cmp al, 7
-	jb @@frozen2
-	; Level >= 7
-	push [word ptr FAlien3FileHandle]
-	jmp @@printFrozen
-@@frozen2:
-	push [word ptr FAlien2FileHandle]
-	jmp @@printFrozen
-@@frozen1:
-	push [word ptr FAlienFileHandle]
-
-@@printFrozen:
-	push FAlienLength
-	push FAlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
-	jmp @@continueAlien
-
-@@printNormal:
-	; Normal aliens based on level
-	mov al, [byte ptr Level]
-	cmp al, 4
-	jb @@normal1
-	cmp al, 7
-	jb @@normal2
-	; Level >= 7
-	push [word ptr Alien3FileHandle]
-	jmp @@printNormalAlien
-@@normal2:
-	push [word ptr Alien2FileHandle]
-	jmp @@printNormalAlien
-@@normal1:
-	push [word ptr AlienFileHandle]
-
-@@printNormalAlien:
-	push AlienLength
-	push AlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
-	jmp @@continueAlien
-
-@@continueAlien:
-    pop bx
-    inc bx
-
-	pop cx
-
-
-	add [word ptr bp - 4], 36 ;set location for next Alien
-
-	loop @@printAlien
-	pop cx
-	add [word ptr bp - 4], 36 ;set location for next Alien
-
-	dec cx              ; Decrement inner loop counter 
-	jnz @@printAlien   ; Continue if not zero
-
-	add [word ptr bp - 2], 20 ;Set location for next line
-
-	pop cx
-	loop @@printAliensLine
-	dec cx              ; Decrement outer loop counter
-	jnz @@printAliensLine   ; Continue if not zero
-
-	add sp, 4
-
-	pop bp
-	ret
-
-@@printBlackAlien:
-    ; Print black rectangle for dead aliens:
-	mov [byte ptr AliensStatusArray + bx], 2
+@@doPrintBlack:
+    mov [byte ptr AliensStatusArray + bx], 2
     push 42
     push AlienHeight
-	mov ax, [bp - 2]
-	sub ax, 4
-	push ax
-	mov ax, [bp - 4]
-	sub ax, 4
-	push ax
+    mov ax, [bp - 2]
+    sub ax, 4
+    push ax
+    mov ax, [bp - 4]
+    sub ax, 4
+    push ax
     push BlackColor
     call PrintColor
-	jmp @@continueAlien
+    jmp @@nextAlien
 
-@@printFreezeAlien:
-	push [word ptr FAlienFileHandle]
-	push FAlienLength
-	push FAlienHeight
-	push [word ptr bp - 2]
-	push [word ptr bp - 4]
-	push offset FileReadBuffer
-	call PrintBMP
-	jmp @@continueAlien
+@@doPrintFrozen:
+    ; Frozen alien logic
+    mov al, [byte ptr Level]
+    cmp al, 4
+    jae @@frozenLevels
+    push [word ptr FAlienFileHandle]
+    jmp @@printFrozen
+
+@@frozenLevels:
+    cmp al, 7
+    jae @@frozen3
+    push [word ptr FAlien2FileHandle]
+    jmp @@printFrozen
+@@frozen3:
+    push [word ptr FAlien3FileHandle]
+
+@@printFrozen:
+    push FAlienLength
+    push FAlienHeight
+    push [word ptr bp - 2]
+    push [word ptr bp - 4]
+    push offset FileReadBuffer
+    call PrintBMP
+    jmp @@nextAlien
+
+@@doPrintNormal:
+    ; Normal alien logic
+    mov al, [byte ptr Level]
+    cmp al, 4
+    jae @@normalLevels
+    push [word ptr AlienFileHandle]
+    jmp @@printNormal
+
+@@normalLevels:
+    cmp al, 7
+    jae @@normal3
+    push [word ptr Alien2FileHandle]
+    jmp @@printNormal
+@@normal3:
+    push [word ptr Alien3FileHandle]
+
+@@printNormal:
+    push AlienLength
+    push AlienHeight
+    push [word ptr bp - 2]
+    push [word ptr bp - 4]
+    push offset FileReadBuffer
+    call PrintBMP
+
+@@nextAlien:
+    pop bx
+    inc bx
+    pop cx
+    add [word ptr bp - 4], 36
+    dec cx
+    jnz @@alienLoop
+
+    add [word ptr bp - 2], 20
+    pop cx
+    dec cx
+    jnz @@rowLoop
+
+    add sp, 4
+    pop bp
+    ret
 endp PrintAliens
 
 
