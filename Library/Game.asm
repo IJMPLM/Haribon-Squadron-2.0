@@ -11,6 +11,7 @@ include "Library/GAssets.asm"
 include "Library/NAssets.asm"
 
 	DebugBool						db	0
+	UnliSkills						db  1
 
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
@@ -262,9 +263,7 @@ proc PrintStatsArea
 	call UpdateLives	
 	call UpdateScoreStat
 	call UpdatePlayerStats
-  
     call CheckSkillAvailability  
-    
 	call UpdateSkills	
 
 	ret
@@ -434,8 +433,8 @@ proc UpdateSkills
 @@GKSkills:
 	ret
 
-@@endUpdateSkills:
 
+@endUpdateSkills:
 	ret
 endp UpdateSkills
 
@@ -993,11 +992,30 @@ proc PlayGame
 @@endSkillCheck:
     jmp @@printShooterAgain
 
+
+; ================================
+; Skills Checker Format:
+; 	Skill Conditions
+; 	Unli Skill Conditions
+;	Combo Conditions
+; 	Skill Function
+; ================================
+
+
 @@secondaryShootPressed:
     cmp [byte ptr SecondaryShootingExists], 0
     jne @@printShooterAgain
-    call playSoundShoot
 
+    cmp [byte ptr UnliSkills], 1
+    jmp @@skillFunctionBullet2
+	
+    cmp [byte ptr CAN_USE_BULLET2], 0  
+    je @@readKey                  
+    sub [byte ptr COMBO_VAL], BULLET2_COST
+	call DisplayCombo				
+
+	@@skillFunctionBullet2:
+    call playSoundShoot
     mov ax, ShooterLineLocation
     sub ax, 6
     mov [word ptr SecondaryBulletLineLocation], ax
@@ -1008,72 +1026,81 @@ proc PlayGame
     jmp @@printShooterAgain
 
 @@invincibilityPressed:
-    cmp [byte ptr CAN_USE_INVINCIBLE], 0  ; Check if we have enough combo for invincibility
-    je @@readKey                   ; If not enough combo, ignore key press
-    cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
+	cmp [byte ptr InvincibleActive], 1 
     je @@readKey
+
+    cmp [byte ptr UnliSkills], 1
+    jmp @@skillFunctionInvincibility
+	
+    cmp [byte ptr CAN_USE_INVINCIBLE], 0  
+    je @@readKey                  
+    sub [byte ptr COMBO_VAL], SHIELD_COST
+	call DisplayCombo
     
-    ; Activate invincibility and reduce combo
+	@@skillFunctionInvincibility:
     mov [byte ptr InvincibleActive], 1   
-    mov [word ptr InvincibleCounter], 36 ; 2 seconds
-    sub [byte ptr COMBO_VAL], INVINCIBLE_COST ; Reduce combo by cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		call DisplayCombo				; Update combo display
-		; call UpdateSkills
+    mov [word ptr InvincibleCounter], 36
     jmp @@readKey
 
 @@freezePressed:
-    cmp [byte ptr CAN_USE_FREEZE], 0    ; Check if we have enough combo for freeze
-    je @@readKey                  ; If not enough combo, ignore key press
-    cmp [byte ptr FreezeActive], 1  
+	cmp [byte ptr FreezeActive], 1 
     je @@readKey
-    
-    ; Activate freeze and reduce combo
+
+    cmp [byte ptr UnliSkills], 1
+    jmp @@skillFunctionFreeze
+	
+    cmp [byte ptr CAN_USE_FREEZE], 0  
+    je @@readKey                  
+    sub [byte ptr COMBO_VAL], FREEZE_COST
+	call DisplayCombo
+
+    @@skillFunctionFreeze:
     mov [byte ptr FreezeActive], 1   
     mov [word ptr FreezeCounter], 54
-    sub [byte ptr COMBO_VAL], FREEZE_COST ; Reduce combo by cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		; call UpdateSkills
-		call DisplayCombo				; Update combo display
-
-    ; Force redraw of aliens to show frozen state immediately
     call ClearAliens
     call PrintAliens
-    
     jmp @@readKey
 
 @@regenerateHeart:
-    cmp [byte ptr CAN_USE_REGEN], 0     ; Check if we have enough combo for heart regen
-    je @@readKey                  ; If not enough combo, ignore key press
-    cmp [LivesRemaining], 3 ; Max lives is 3
-    jae @@readKey
+    cmp [byte ptr UnliSkills], 1
+    jmp @@skillFunctionRegenerate
+	
+    cmp [byte ptr CAN_USE_REGEN], 0  
+    je @@readKey                  
+    sub [byte ptr COMBO_VAL], REGEN_COST
+	call DisplayCombo
 
-    ; Regenerate heart and reduce combo
+	@@skillFunctionRegenerate:
     inc [LivesRemaining]
-    sub [byte ptr COMBO_VAL], REGEN_COST ; Reduce combo by cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		call DisplayCombo				; Update combo display
-		; call UpdateSkills
     call UpdateLives
     jmp @@readKey
 
 @@enableLaser:
-    cmp [byte ptr COMBO_VAL], 5    ; Check if we have enough combo for laser
-    jb @@printShooterAgain        ; If not enough combo, ignore laser press
     cmp [byte ptr PlayerShootingExists], 0
-    jne @@printShooterAgain
+    jne @@readKey
+
+    cmp [byte ptr UnliSkills], 1
+    jmp @@skillFunctionLaser
+	
+    cmp [byte ptr CAN_USE_LASER], 0  
+    je @@readKey                  
+    sub [byte ptr COMBO_VAL], LASER_COST
+	call DisplayCombo
+
+	@@skillFunctionLaser:
     mov [byte ptr LaserEnabled], 1
-    sub [byte ptr COMBO_VAL], 5    ; Deduct combo cost
-    ; #Jieco
-		; call UpdateComboStat  ; for debugging
-		call DisplayCombo				; Update combo display
-		; call UpdateSkills
     jmp @@shootPressed
 
 @@enableAOE:
+    cmp [byte ptr UnliSkills], 1
+    jmp @@skillFunctionAOE
+	
+    cmp [byte ptr CAN_USE_LED], 0  
+    je @@readKey                  
+    sub [byte ptr COMBO_VAL], LED_COST
+	call DisplayCombo
+
+	@@skillFunctionAOE:
 	mov [byte ptr AOEEnabled], 1
     jmp @@printShooterAgain
 
