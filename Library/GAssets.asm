@@ -49,6 +49,8 @@ DATASEG
 
 	GLS0FileName					db	'Assets/GLS0.bmp', 0
 	GLS1FileName					db	'Assets/GLS1.bmp', 0
+	GLSS0FileName					db	'Assets/GLSS0.bmp', 0
+	GLSS1FileName					db	'Assets/GLSS1.bmp', 0
 	GKS0FileName					db	'Assets/GKS0.bmp', 0
 	GKS1FileName					db	'Assets/GKS1.bmp', 0
 
