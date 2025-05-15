@@ -13,15 +13,25 @@ DATASEG
 	COMBO_VAL       	db  ?   ; where combo value is stored
 	COMBO_MAX       	db  9   ; set combo cap to 9
 
-	; Skill costs
-	REGEN_COST      	equ 2    ; Cost for heart regeneration
+	; (to be removed)
 	INVINCIBLE_COST 	equ 2    ; Cost for invincibility
-	FREEZE_COST     	equ 2    ; Cost for freeze
 
+	; Skill Costs
+	BULLET2_COST			equ 1		 ; Cost for second bullet
+	LASER_COST				equ 1		 ; Cost for laser
+	SHIELD_COST				equ 1		 ; Cost for shield
+
+	LED_COST					equ 1		 ; Cost for AOE
+	FREEZE_COST     	equ 2    ; Cost for freeze
+	REGEN_COST      	equ 2    ; Cost for heart regeneration
+	
 	; Skill availability flags  
-	CAN_USE_REGEN    	db  0    ; Flag if regen is available
+	CAN_USE_BULLET2		db	0		 ; Flag if Second Bullet is available
+	CAN_USE_LASER			db	0 	 ; Flag if Laser is available
 	CAN_USE_INVINCIBLE db  0    ; Flag if invincibility is available
+	CAN_USE_LED 			db  0    ; Flag if LED is available
 	CAN_USE_FREEZE   	db  0    ; Flag if freeze is available
+	CAN_USE_REGEN    	db  0    ; Flag if regen is available
 
 	; Combo BMPs
 	Combo0FileName				db	'Assets/0.bmp', 0
