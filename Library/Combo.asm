@@ -14,9 +14,9 @@ DATASEG
 	COMBO_MAX       	db  9   ; set combo cap to 9
 
 	; Skill costs
-	REGEN_COST      	equ 9    ; Cost for heart regeneration
-	INVINCIBLE_COST 	equ 7    ; Cost for invincibility
-	FREEZE_COST     	equ 5    ; Cost for freeze
+	REGEN_COST      	equ 2    ; Cost for heart regeneration
+	INVINCIBLE_COST 	equ 2    ; Cost for invincibility
+	FREEZE_COST     	equ 2    ; Cost for freeze
 
 	; Skill availability flags  
 	CAN_USE_REGEN    	db  0    ; Flag if regen is available
@@ -369,5 +369,41 @@ proc CheckSkillAvailability
 	mov [byte ptr CAN_USE_FREEZE], 1
 
 @@endCheck:
+	cmp [byte ptr DebugBool], 1
+	jne @@skipDebugger
+	
+	push dx
+    push ax
+
+   	xor bh, bh  	; Page 0
+	mov dh, 0   	; Row 0
+	mov dl, 70  	; Start at column 70
+	mov ah, 2   	; Set cursor position
+	int 10h
+
+    
+    ; Print Regen status
+    mov dl, [CAN_USE_REGEN]
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    ; Print Invincible status
+    mov dl, [CAN_USE_INVINCIBLE] 
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    ; Print Freeze status
+    mov dl, [CAN_USE_FREEZE]
+    add dl, '0'
+    mov ah, 2
+    int 21h
+    
+    pop ax
+    pop dx
+
+@@skipDebugger:
 	ret
 endp CheckSkillAvailability
+

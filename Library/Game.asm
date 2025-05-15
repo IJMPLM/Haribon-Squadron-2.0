@@ -262,6 +262,9 @@ proc PrintStatsArea
 	call UpdateLives	
 	call UpdateScoreStat
 	call UpdatePlayerStats
+  
+    call CheckSkillAvailability  
+    
 	call UpdateSkills	
 
 	ret
@@ -383,8 +386,8 @@ proc UpdateSkills
 
 @@GLSkills:
 @@Validate2Bullet:
-	cmp [byte ptr CAN_USE_FREEZE], 1
-	jne @@Activate2Bullet
+	cmp [byte ptr CAN_USE_INVINCIBLE], 1
+	je @@Activate2Bullet
 
 @@Deactivate2Bullet:
 	push offset GLBulletI_FileName
@@ -401,6 +404,7 @@ proc UpdateSkills
 
 	push [GLBulletI_FileHandle]
 	call CloseFile
+  
 	ret
 
 @@Activate2Bullet:
@@ -428,9 +432,10 @@ proc UpdateSkills
 	; jne @@printGKSkill1
 
 @@GKSkills:
+	ret
 
+@@endUpdateSkills:
 
-@endUpdateSkills:
 	ret
 endp UpdateSkills
 
@@ -984,9 +989,8 @@ proc PlayGame
     je @@freezePressed
 	cmp ah, 2Ch ; Z (AOE Enable) CP: 3
 	je @@enableAOE
+
 @@endSkillCheck:
-
-
     jmp @@printShooterAgain
 
 @@secondaryShootPressed:
@@ -1004,7 +1008,6 @@ proc PlayGame
     jmp @@printShooterAgain
 
 @@invincibilityPressed:
-    call CheckSkillAvailability    ; Check if skills are available based on current combo
     cmp [byte ptr CAN_USE_INVINCIBLE], 0  ; Check if we have enough combo for invincibility
     je @@readKey                   ; If not enough combo, ignore key press
     cmp [byte ptr InvincibleActive], 1  ; Check if already invincible
@@ -1021,7 +1024,6 @@ proc PlayGame
     jmp @@readKey
 
 @@freezePressed:
-    call CheckSkillAvailability   
     cmp [byte ptr CAN_USE_FREEZE], 0    ; Check if we have enough combo for freeze
     je @@readKey                  ; If not enough combo, ignore key press
     cmp [byte ptr FreezeActive], 1  
@@ -1043,7 +1045,6 @@ proc PlayGame
     jmp @@readKey
 
 @@regenerateHeart:
-    call CheckSkillAvailability
     cmp [byte ptr CAN_USE_REGEN], 0     ; Check if we have enough combo for heart regen
     je @@readKey                  ; If not enough combo, ignore key press
     cmp [LivesRemaining], 3 ; Max lives is 3
@@ -1060,7 +1061,6 @@ proc PlayGame
     jmp @@readKey
 
 @@enableLaser:
-    call CheckSkillAvailability    ; Check if skills are available based on current combo
     cmp [byte ptr COMBO_VAL], 5    ; Check if we have enough combo for laser
     jb @@printShooterAgain        ; If not enough combo, ignore laser press
     cmp [byte ptr PlayerShootingExists], 0
@@ -1342,9 +1342,9 @@ proc PlayGame
 	; for re-displaying hud
 	call DisplayCombo
 	; call @@printShooterAgain		; prints shooter but flickers upon being called
-	call PrintStatsArea
 	
 	call CheckAndMoveAliens
+	call PrintStatsArea
 	
 	call CheckIfAliensReachedBottom
 	cmp ax, 1
