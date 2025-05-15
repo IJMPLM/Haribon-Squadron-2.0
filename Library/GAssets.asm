@@ -1,16 +1,28 @@
 DATASEG
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
-; -----------------------------------------------------------
+; -----------------------------------------------------------	
 	AlienFileName					db	'Assets/Alien.bmp',0
 	AlienFileHandle					dw	?
 	AlienLength						equ	32
 	AlienHeight						equ	32
 
+	Alien2FileName					db	'Assets/Alien2.bmp',0
+	Alien2FileHandle				dw	?
+
+	Alien3FileName					db	'Assets/Alien3.bmp',0
+	Alien3FileHandle				dw	?
+
 	FAlienFileName					db	'Assets/FAlien.bmp',0
 	FAlienFileHandle				dw	?
 	FAlienLength					equ	32
 	FAlienHeight					equ	32
+
+	FAlien2FileName					db	'Assets/FAlien2.bmp',0
+	FAlien2FileHandle				dw	?
+
+	FAlien3FileName					db	'Assets/FAlien3.bmp',0
+	FAlien3FileHandle				dw	?
 
 	SplatterFileName				db	'Assets/Splatter.bmp',0
 	SplatterFileHandle				dw	?
@@ -34,6 +46,12 @@ DATASEG
 	ShooterReloadFileHandle			dw	?
 	ShooterReloadLength				equ	16
 	ShooterReloadHeight				equ	16
+
+	GLS0FileName					db	'Assets/GLS0.bmp', 0
+	GLS1FileName					db	'Assets/GLS1.bmp', 0
+	GKS0FileName					db	'Assets/GKS0.bmp', 0
+	GKS1FileName					db	'Assets/GKS1.bmp', 0
+
 
 	SShieldFileName					db	'Assets/SShield2.bmp', 0
 	SShieldFileHandle				dw	?

@@ -34,9 +34,7 @@ proc PrintAliens
 	mov [bp - 4], ax
 
 	mov cx, 8
-@@printAlien:
-	push cx
-
+@@printAlien:	push cx
 	push bx
 
     cmp [byte ptr AliensStatusArray + bx], 0
@@ -47,8 +45,49 @@ proc PrintAliens
 
 	;Print Alien (check for freeze first):
 	cmp [byte ptr FreezeActive], 1
-	je @@printFreezeAlien
+	jne @@printNormal
+
+	; Frozen aliens based on level
+	mov al, [byte ptr Level]
+	cmp al, 4
+	jb @@frozen1
+	cmp al, 7
+	jb @@frozen2
+	; Level >= 7
+	push [word ptr FAlien3FileHandle]
+	jmp @@printFrozen
+@@frozen2:
+	push [word ptr FAlien2FileHandle]
+	jmp @@printFrozen
+@@frozen1:
+	push [word ptr FAlienFileHandle]
+
+@@printFrozen:
+	push FAlienLength
+	push FAlienHeight
+	push [word ptr bp - 2]
+	push [word ptr bp - 4]
+	push offset FileReadBuffer
+	call PrintBMP
+	jmp @@continueAlien
+
+@@printNormal:
+	; Normal aliens based on level
+	mov al, [byte ptr Level]
+	cmp al, 4
+	jb @@normal1
+	cmp al, 7
+	jb @@normal2
+	; Level >= 7
+	push [word ptr Alien3FileHandle]
+	jmp @@printNormalAlien
+@@normal2:
+	push [word ptr Alien2FileHandle]
+	jmp @@printNormalAlien
+@@normal1:
 	push [word ptr AlienFileHandle]
+
+@@printNormalAlien:
 	push AlienLength
 	push AlienHeight
 	push [word ptr bp - 2]
@@ -67,11 +106,18 @@ proc PrintAliens
 	add [word ptr bp - 4], 36 ;set location for next Alien
 
 	loop @@printAlien
+	pop cx
+	add [word ptr bp - 4], 36 ;set location for next Alien
+
+	dec cx              ; Decrement inner loop counter 
+	jnz @@printAlien   ; Continue if not zero
 
 	add [word ptr bp - 2], 20 ;Set location for next line
 
 	pop cx
 	loop @@printAliensLine
+	dec cx              ; Decrement outer loop counter
+	jnz @@printAliensLine   ; Continue if not zero
 
 	add sp, 4
 
@@ -468,6 +514,9 @@ proc UpdateAliensShots
 	mov cx, 9
 	rep movsw
 
+	; #Jieco
+	call DisplayCombo ; refreshes display when eaten by a bullet
+
 @@decShootingsAmount:
 	dec [byte ptr AliensShootingCurrentAmount]
 
@@ -775,7 +824,8 @@ KillAlien:
 	;Increase and update combo upon consecutive hit 
 	call ValidateCombo ; #Jieco
 	call DisplayCombo
-	call UpdateComboStat 
+	; call UpdateComboStat ; for debugging
+	
 	inc [word ptr Score]
 	call UpdateScoreStat
 

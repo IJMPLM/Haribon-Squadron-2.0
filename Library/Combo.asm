@@ -1,8 +1,5 @@
 ; -----------------------------------------------------------
 ; This file implements the combo streak feature for alien kills.
-;
-;	Bug:
-;		- Combo does not reset when stage is immediately cleared
 ; -----------------------------------------------------------
 
 DATASEG
@@ -30,54 +27,36 @@ DATASEG
 	; Combo BMPs
 	Combo0FileName				db	'Assets/0.bmp', 0
 	Combo0FileHandle			dw	?
-	Combo0Length					equ	16
-	Combo0Height					equ	16
 
-	; Combo1FileName				db	'Assets/1.bmp', 0
+	Combo1FileName				db	'Assets/1.bmp', 0
 	Combo1FileHandle			dw	?
-	Combo1Length					equ	16
-	Combo1Height					equ	16
 
-	; Combo2FileName				db	'Assets/2.bmp', 0
+	Combo2FileName				db	'Assets/2.bmp', 0
 	Combo2FileHandle			dw	?
-	Combo2Length					equ	16
-	Combo2Height					equ	16
 
 	Combo3FileName				db	'Assets/3.bmp', 0
 	Combo3FileHandle			dw	?
-	Combo3Length					equ	16
-	Combo3Height					equ	16
 
-	; Combo4FileName				db	'Assets/4.bmp', 0
+	Combo4FileName				db	'Assets/4.bmp', 0
 	Combo4FileHandle			dw	?
-	Combo4Length					equ	16
-	Combo4Height					equ	16
 
 	Combo5FileName				db	'Assets/5.bmp', 0
 	Combo5FileHandle			dw	?
-	Combo5Length					equ	16
-	Combo5Height					equ	16
 
-	; Combo6FileName				db	'Assets/6.bmp', 0
+	Combo6FileName				db	'Assets/6.bmp', 0
 	Combo6FileHandle			dw	?
-	Combo6Length					equ	16
-	Combo6Height					equ	16
 
-	; Combo7FileName				db	'Assets/7.bmp', 0
+	Combo7FileName				db	'Assets/7.bmp', 0
 	Combo7FileHandle			dw	?
-	Combo7Length					equ	16
-	Combo7Height					equ	16
 
-	; Combo8FileName				db	'Assets/8.bmp', 0
+	Combo8FileName				db	'Assets/8.bmp', 0
 	Combo8FileHandle			dw	?
-	Combo8Length					equ	16
-	Combo8Height					equ	16
 
 	Combo9FileName				db	'Assets/9.bmp', 0
 	Combo9FileHandle			dw	?
-	Combo9Length					equ	16
-	Combo9Height					equ	16
 	
+	ComboLength						equ 20
+	ComboHeight						equ 20
 	ComboPrintStartLine		equ	149
 	ComboPrintStartRow		equ	285
 
@@ -117,21 +96,48 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo0FileHandle]
-	push Combo0Length
-	push Combo0Height
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
-	call PrintBMP
-
+	call PrintBMP 
 	push [Combo0FileHandle]
 	call CloseFile
 	ret
 
 @@printCombo1:
+	push offset Combo1FileName
+	push offset Combo1FileHandle	
+	call OpenFile
+
+	push [Combo1FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo1FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo2:
+	push offset Combo2FileName
+	push offset Combo2FileHandle	
+	call OpenFile
+
+	push [Combo2FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo2FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo3:
@@ -140,8 +146,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo3FileHandle]
-	push Combo3Length
-	push Combo3Height
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -152,6 +158,20 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	ret
 
 @@printCombo4:
+	push offset Combo4FileName
+	push offset Combo4FileHandle	
+	call OpenFile
+
+	push [Combo4FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo4FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo5:
@@ -160,8 +180,8 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	call OpenFile
 
 	push [Combo5FileHandle]
-	push Combo5Length
-	push Combo5Height
+	push ComboLength
+	push ComboHeight
 	push ComboPrintStartLine
 	push ComboPrintStartRow
 	push offset FileReadBuffer
@@ -172,21 +192,77 @@ proc DisplayCombo ; called in Game.asm, search word "#Jieco"
 	ret
 
 @@printCombo6:
+	push offset Combo6FileName
+	push offset Combo6FileHandle	
+	call OpenFile
+
+	push [Combo6FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo6FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo7:
+	push offset Combo7FileName
+	push offset Combo7FileHandle	
+	call OpenFile
+
+	push [Combo7FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo7FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo8:
+	push offset Combo8FileName
+	push offset Combo8FileHandle	
+	call OpenFile
+
+	push [Combo8FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo8FileHandle]
+	call CloseFile
 	ret
 
 @@printCombo9:
+	push offset Combo9FileName
+	push offset Combo9FileHandle	
+	call OpenFile
+
+	push [Combo9FileHandle]
+	push ComboLength
+	push ComboHeight
+	push ComboPrintStartLine
+	push ComboPrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [Combo9FileHandle]
+	call CloseFile
 	ret
 
 endp DisplayCombo
 
 ;--------------------------------------------------------------------
-; Updates the combo shown on screen (to be hidden)
+; Updates the combo shown on screen (for debugging)
 ;--------------------------------------------------------------------
 
 proc UpdateComboStat ; called in Game.asm, search word "#Jieco"
