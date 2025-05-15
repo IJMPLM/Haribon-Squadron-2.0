@@ -262,6 +262,9 @@ proc PrintStatsArea
 	call UpdateLives	
 	call UpdateScoreStat
 	call UpdatePlayerStats
+  
+    call CheckSkillAvailability  
+    
     call CheckSkillAvailability  
 	call UpdateSkills	
 
@@ -402,6 +405,7 @@ proc UpdateSkills
 
 	push [GLBulletI_FileHandle]
 	call CloseFile
+  
 	ret
 
 @@Activate2Bullet:
@@ -431,7 +435,8 @@ proc UpdateSkills
 @@GKSkills:
 	ret
 
-@@endUpdateSkills:
+
+@endUpdateSkills:
 	ret
 endp UpdateSkills
 
