@@ -212,70 +212,8 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
-@@printGLSkill1:
-	push offset GLSkill1FileName
-	push offset GLSkill1FileHandle	
-	call OpenFile
-
-	push [GLSkill1FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill1PrintStartLine
-	push Skill1PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLSkill1FileHandle]
-	call CloseFile
-
-@@printGLSkill2:
-	push offset GLSkill2FileName
-	push offset GLSkill2FileHandle	
-	call OpenFile
-
-	push [GLSkill2FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill2PrintStartLine
-	push Skill2PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLSkill2FileHandle]
-	call CloseFile
-
-@@printGLSkill3:
-	push offset GLSkill3FileName
-	push offset GLSkill3FileHandle	
-	call OpenFile
-
-	push [GLSkill3FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill3PrintStartLine
-	push Skill3PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLSkill3FileHandle]
-	call CloseFile
-
-
-; @@printSkills:		; #Skills
-; 	push offset SkillsFileName
-; 	push offset SkillsFileHandle	
-; 	call OpenFile
-
-; 	push [SkillsFileHandle]
-; 	push SkillsLength
-; 	push SkillsHeight
-; 	push SkillsPrintStartLine
-; 	push SkillsPrintStartRow
-; 	push offset FileReadBuffer
-; 	call PrintBMP
-
-; 	push [SkillsFileHandle]
-; 	call CloseFile
+	;Print skills
+	; call PrintSkills ; !this would be dynamically updated upon called
 
 @@printBattery:
 	push offset BatteryFileName
@@ -328,6 +266,118 @@ proc PrintStatsArea
 	ret
 endp PrintStatsArea
 
+; --------------------------------------------------------
+; Prints and Update skills of the selected ship
+; --------------------------------------------------------
+proc PrintSkills
+	; GL = 0, GK = 1
+	cmp [byte ptr ShipSelect], 0
+	jne @@printGKSkill1
+
+@@printGLSkill1:
+	push offset GLBulletI_FileName
+	push offset GLBulletI_FileHandle	
+	call OpenFile
+
+	push [GLBulletI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLBulletI_FileHandle]
+	call CloseFile
+
+@@printGLSkill2:
+	push offset GLLaserI_FileName
+	push offset GLLaserI_FileHandle	
+	call OpenFile
+
+	push [GLLaserI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill2PrintStartLine
+	push Skill2PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLLaserI_FileHandle]
+	call CloseFile
+
+@@printGLSkill3:
+	push offset GLChargeI_FileName
+	push offset GLChargeI_FileHandle	
+	call OpenFile
+
+	push [GLChargeI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill3PrintStartLine
+	push Skill3PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GLChargeI_FileHandle]
+	call CloseFile
+	ret
+
+@@printGKSkill1:
+	push offset GKLEDI_FileName
+	push offset GKLEDI_FileHandle	
+	call OpenFile
+
+	push [GKLEDI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill1PrintStartLine
+	push Skill1PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKLEDI_FileHandle]
+	call CloseFile
+
+@@printGKSkill2:
+	push offset GKFreezeI_FileName
+	push offset GKFreezeI_FileHandle	
+	call OpenFile
+
+	push [GKFreezeI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill2PrintStartLine
+	push Skill2PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKFreezeI_FileHandle]
+	call CloseFile
+
+@@printGKSkill3:
+	push offset GKShieldI_FileName
+	push offset GKShieldI_FileHandle	
+	call OpenFile
+
+	push [GKShieldI_FileHandle]
+	push SkillLength
+	push SkillHeight
+	push Skill3PrintStartLine
+	push Skill3PrintStartRow
+	push offset FileReadBuffer
+	call PrintBMP
+
+	push [GKShieldI_FileHandle]
+	call CloseFile
+
+@@endPrintSkills:
+	ret
+endp PrintSkills
+
+proc UpdateSkills
+	
+endp UpdateSkills
 
 ;----------------------------------------------
 ; Updates the amount of lives shown on screen
@@ -738,9 +788,11 @@ proc PlayGame
 	push offset SplatterFileHandle
 	call OpenFile
 
+	; GL = 0, GK = 1
 	cmp [byte ptr ShipSelect], 0
 	jne @@openGK
 	
+@@openGL:
 	push offset GLS0FileName
 	push offset ShooterReloadFileHandle
 	call OpenFile
@@ -758,7 +810,6 @@ proc PlayGame
 	call OpenFile
 
 @@endShipSelect:
-
 	push offset SShieldFileName
 	push offset SShieldFileHandle
 	call OpenFile
@@ -775,6 +826,7 @@ proc PlayGame
 @@stageOnePrint:
 	call PrintBackground
 	call PrintStatsArea
+	call PrintSkills
 	call UpdatePlayerStats
 	call DisplayCombo
 

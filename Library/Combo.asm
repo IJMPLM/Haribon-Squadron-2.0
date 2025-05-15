@@ -3,7 +3,6 @@
 ; -----------------------------------------------------------
 
 DATASEG
-
 	COMBO_STRING    db  '| ', '$' ; label
 	COMBO_Y				equ	37
 	COMBO_X				equ 19
