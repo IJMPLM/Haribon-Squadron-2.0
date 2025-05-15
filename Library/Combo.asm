@@ -13,8 +13,6 @@ DATASEG
 	COMBO_VAL       	db  ?   ; where combo value is stored
 	COMBO_MAX       	db  9   ; set combo cap to 9
 
-	; (to be removed)
-	INVINCIBLE_COST 	equ 2    ; Cost for invincibility
 
 	; Skill Costs
 	BULLET2_COST			equ 1		 ; Cost for second bullet
@@ -28,7 +26,7 @@ DATASEG
 	; Skill availability flags  
 	CAN_USE_BULLET2		db	0		 ; Flag if Second Bullet is available
 	CAN_USE_LASER			db	0 	 ; Flag if Laser is available
-	CAN_USE_INVINCIBLE db  0    ; Flag if invincibility is available
+	CAN_USE_SHIELD 		db  0    ; Flag if invincibility is available
 	CAN_USE_LED 			db  0    ; Flag if LED is available
 	CAN_USE_FREEZE   	db  0    ; Flag if freeze is available
 	CAN_USE_REGEN    	db  0    ; Flag if regen is available
@@ -362,12 +360,12 @@ proc CheckSkillAvailability
 
 @@checkInvincible:
 	mov al, [COMBO_VAL]
-	cmp al, INVINCIBLE_COST
+	cmp al, SHIELD_COST
 	jae @@canInvincible
-	mov [byte ptr CAN_USE_INVINCIBLE], 0
+	mov [byte ptr CAN_USE_SHIELD], 0
 	jmp @@checkFreeze
 @@canInvincible:
-	mov [byte ptr CAN_USE_INVINCIBLE], 1
+	mov [byte ptr CAN_USE_SHIELD], 1
 
 @@checkFreeze:
 	mov al, [COMBO_VAL]
@@ -399,7 +397,7 @@ proc CheckSkillAvailability
     int 21h
     
     ; Print Invincible status
-    mov dl, [CAN_USE_INVINCIBLE] 
+    mov dl, [CAN_USE_SHIELD] 
     add dl, '0'
     mov ah, 2
     int 21h

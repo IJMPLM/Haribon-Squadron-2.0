@@ -213,9 +213,6 @@ proc PrintStatsArea
 	mov dx, offset LevelString
 	int 21h
 
-	;Print skills
-	; call PrintSkills ; !this would be dynamically updated upon called
-
 @@printBattery:
 	push offset BatteryFileName
 	push offset BatteryFileHandle	
@@ -272,171 +269,277 @@ endp PrintStatsArea
 ; --------------------------------------------------------
 ; Prints and Update skills of the selected ship
 ; --------------------------------------------------------
-proc PrintSkills
-	; GL = 0, GK = 1
-	cmp [byte ptr ShipSelect], 0
-	jne @@printGKSkill1
-
-@@printGLSkill1:
-	push offset GLBulletI_FileName
-	push offset GLBulletI_FileHandle	
-	call OpenFile
-
-	push [GLBulletI_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill1PrintStartLine
-	push Skill1PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLBulletI_FileHandle]
-	call CloseFile
-
-@@printGLSkill2:
-	push offset GLLaserI_FileName
-	push offset GLLaserI_FileHandle	
-	call OpenFile
-
-	push [GLLaserI_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill2PrintStartLine
-	push Skill2PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLLaserI_FileHandle]
-	call CloseFile
-
-@@printGLSkill3:
-	push offset GLChargeI_FileName
-	push offset GLChargeI_FileHandle	
-	call OpenFile
-
-	push [GLChargeI_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill3PrintStartLine
-	push Skill3PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLChargeI_FileHandle]
-	call CloseFile
-	ret
-
-@@printGKSkill1:
-	push offset GKLEDI_FileName
-	push offset GKLEDI_FileHandle	
-	call OpenFile
-
-	push [GKLEDI_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill1PrintStartLine
-	push Skill1PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GKLEDI_FileHandle]
-	call CloseFile
-
-@@printGKSkill2:
-	push offset GKFreezeI_FileName
-	push offset GKFreezeI_FileHandle	
-	call OpenFile
-
-	push [GKFreezeI_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill2PrintStartLine
-	push Skill2PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GKFreezeI_FileHandle]
-	call CloseFile
-
-@@printGKSkill3:
-	push offset GKShieldI_FileName
-	push offset GKShieldI_FileHandle	
-	call OpenFile
-
-	push [GKShieldI_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill3PrintStartLine
-	push Skill3PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GKShieldI_FileHandle]
-	call CloseFile
-
-@@endPrintSkills:
-	ret
-endp PrintSkills
-
 proc UpdateSkills
 	; GL = 0, GK = 1
-	cmp [byte ptr ShipSelect], 0
+	cmp [byte ptr ShipSelect], 0	; check which ship is selected 
 	jne @@GKSkills
 
 @@GLSkills:
-@@Validate2Bullet:
-	cmp [byte ptr CAN_USE_INVINCIBLE], 1
-	je @@Activate2Bullet
-
-@@Deactivate2Bullet:
-	push offset GLBulletI_FileName
-	push offset GLBulletI_FileHandle	
-	call OpenFile
-
-	push [GLBulletI_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill1PrintStartLine
-	push Skill1PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLBulletI_FileHandle]
-	call CloseFile
-  
+	call GLBullet
+	call GLLaser 
+	call GLShield
 	ret
-
-@@Activate2Bullet:
-	push offset GLBulletA_FileName
-	push offset GLBulletA_FileHandle	
-	call OpenFile
-
-	push [GLBulletA_FileHandle]
-	push SkillLength
-	push SkillHeight
-	push Skill1PrintStartLine
-	push Skill1PrintStartRow
-	push offset FileReadBuffer
-	call PrintBMP
-
-	push [GLBulletA_FileHandle]
-	call CloseFile
-	ret ; ph
-
-@@ValidateLaser:
-	cmp [byte ptr CAN_USE_INVINCIBLE], 0
-	; jne @@printGKSkill1
-@@ValidateCharge:
-	cmp [byte ptr CAN_USE_REGEN], 0
-	; jne @@printGKSkill1
 
 @@GKSkills:
+	call GKLED
+	call GKFreeze
+	call GKCharge
 	ret
 
-
-@endUpdateSkills:
-	ret
 endp UpdateSkills
+
+proc GLBullet
+	cmp [byte ptr CAN_USE_SHIELD], 1 ; to be changed
+	je @@Activate2Bullet
+
+	@@Deactivate2Bullet:
+		push offset GLBulletI_FileName
+		push offset GLBulletI_FileHandle	
+		call OpenFile
+
+		push [GLBulletI_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill1PrintStartLine
+		push Skill1PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GLBulletI_FileHandle]
+		call CloseFile
+		jmp @@endGLBullet
+
+	@@Activate2Bullet:
+		push offset GLBulletA_FileName
+		push offset GLBulletA_FileHandle	
+		call OpenFile
+
+		push [GLBulletA_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill1PrintStartLine
+		push Skill1PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GLBulletA_FileHandle]
+		call CloseFile
+		jmp @@endGLBullet
+
+	@@endGLBullet:
+		ret
+endp GLBullet
+
+proc GLLaser
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	je @@ActivateLaser
+
+	@@DeactivateLaser:
+		push offset GLLaserI_FileName
+		push offset GLLaserI_FileHandle	
+		call OpenFile
+
+		push [GLLaserI_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill2PrintStartLine
+		push Skill2PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GLLaserI_FileHandle]
+		call CloseFile
+		jmp @@endGLLaser
+
+	@@ActivateLaser:
+		push offset GLLaserA_FileName
+		push offset GLLaserA_FileHandle	
+		call OpenFile
+
+		push [GLLaserA_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill2PrintStartLine
+		push Skill2PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GLLaserA_FileHandle]
+		call CloseFile
+		jmp @@endGLLaser
+
+	@@endGLLaser:
+		ret
+endp GLLaser
+
+proc GLShield
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	je @@ActivateShield
+
+	@@DeactivateShield: 
+		push offset GKShieldI_FileName
+		push offset GKShieldI_FileHandle	
+		call OpenFile
+
+		push [GKShieldI_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill3PrintStartLine
+		push Skill3PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GKShieldI_FileHandle]
+		call CloseFile
+		jmp @@endGLShield
+
+	@@ActivateShield:
+		push offset GKShieldA_FileName
+		push offset GKShieldA_FileHandle	
+		call OpenFile
+
+		push [GKShieldA_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill3PrintStartLine
+		push Skill3PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GKShieldA_FileHandle]
+		call CloseFile
+		jmp @@endGLShield
+	
+	@@endGLShield:
+		ret
+
+endp GLShield
+
+proc GKLED
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	je @@ActivateLED
+
+	@@DeactivateLED: 
+		push offset GKLEDI_FileName
+		push offset GKLEDI_FileHandle	
+		call OpenFile
+
+		push [GKLEDI_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill1PrintStartLine
+		push Skill1PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GKLEDI_FileHandle]
+		call CloseFile
+		jmp @@endGKLED
+
+	@@ActivateLED:
+		push offset GKLEDA_FileName
+		push offset GKLEDA_FileHandle	
+		call OpenFile
+
+		push [GKLEDA_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill1PrintStartLine
+		push Skill1PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GKLEDA_FileHandle]
+		call CloseFile
+		jmp @@endGKLED
+
+	@@endGKLED:
+		ret
+endp GKLED
+
+proc GKFreeze
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	je @@ActivateFreeze
+
+	@@DeactivateFreeze: 
+		push offset GKFreezeI_FileName
+		push offset GKFreezeI_FileHandle	
+		call OpenFile
+
+		push [GKFreezeI_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill2PrintStartLine
+		push Skill2PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GKFreezeI_FileHandle]
+		call CloseFile
+		jmp @@endGKFreeze
+
+	@@ActivateFreeze:
+		push offset GKFreezeA_FileName
+		push offset GKFreezeA_FileHandle	
+		call OpenFile
+
+		push [GKFreezeA_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill2PrintStartLine
+		push Skill2PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GKFreezeA_FileHandle]
+		call CloseFile
+		jmp @@endGKFreeze
+
+	@@endGKFreeze:
+		ret
+endp GKFreeze
+
+proc GKCharge
+	cmp [byte ptr CAN_USE_SHIELD], 1	; to be changed
+	je @@ActivateCharge
+
+	@@DeactivateCharge: 
+		push offset GLChargeI_FileName
+		push offset GLChargeI_FileHandle	
+		call OpenFile
+
+		push [GLChargeI_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill3PrintStartLine
+		push Skill3PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GLChargeI_FileHandle]
+		call CloseFile
+		jmp @@endGKCharge
+
+	@@ActivateCharge:
+		push offset GLChargeA_FileName
+		push offset GLChargeA_FileHandle	
+		call OpenFile
+
+		push [GLChargeA_FileHandle]
+		push SkillLength
+		push SkillHeight
+		push Skill3PrintStartLine
+		push Skill3PrintStartRow
+		push offset FileReadBuffer
+		call PrintBMP
+
+		push [GLChargeA_FileHandle]
+		call CloseFile
+		jmp @@endGKCharge
+
+	@@endGKCharge:
+		ret
+endp GKCharge
 
 ;----------------------------------------------
 ; Updates the amount of lives shown on screen
@@ -885,7 +988,7 @@ proc PlayGame
 @@stageOnePrint:
 	call PrintBackground
 	call PrintStatsArea
-	call PrintSkills
+	call UpdateSkills
 	call UpdatePlayerStats
 	call DisplayCombo
 
@@ -1032,7 +1135,7 @@ proc PlayGame
     cmp [byte ptr UnliSkills], 1
     jmp @@skillFunctionInvincibility
 	
-    cmp [byte ptr CAN_USE_INVINCIBLE], 0  
+    cmp [byte ptr CAN_USE_SHIELD], 0  
     je @@readKey                  
     sub [byte ptr COMBO_VAL], SHIELD_COST
 	call DisplayCombo
