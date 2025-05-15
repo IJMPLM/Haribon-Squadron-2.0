@@ -570,8 +570,7 @@ proc CheckAndHitAlien
     jmp @@doColumnClear
 
 @@normalHitDetection:
-    ;Check if Alien hit:
-    ;Check above:
+    ; Check if Alien hit using the same checks as secondary bullet
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     dec dx
@@ -580,9 +579,9 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
-    ;Check below:
+    ; Check below:
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     add dx, 4
@@ -591,19 +590,9 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
-    mov ah, 0Dh
-    mov dx, [PlayerBulletLineLocation]
-    sub dx, 3
-    mov cx, [PlayerShootingRowLocation]
-    mov bh, 0
-    int 10h
-
-    cmp al, GreenColor
-    je @@hitAlien
-
-    ;Check from left
+    ; Check from left
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     mov cx, [PlayerShootingRowLocation]
@@ -612,9 +601,9 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
-    ;Check from right
+    ; Check from right
     mov ah, 0Dh
     mov dx, [PlayerBulletLineLocation]
     mov cx, [PlayerShootingRowLocation]
@@ -623,34 +612,61 @@ proc CheckAndHitAlien
     int 10h
 
     cmp al, GreenColor
-    je @@hitAlien
+    je @@calculateHitPosition
 
     jmp @@procEnd
 
-@@hitAlien:
-    ; Calculate grid position and get target index (keep existing code)
+@@calculateHitPosition:
+    ; Calculate hit position using boundary checking
     mov ax, [PlayerBulletLineLocation]
     sub ax, [AliensPrintStartLine]
-    mov bl, 20
-    div bl
-    mov ah, 0  
-    mov bx, ax      ; Row number in bx
 
+    cmp ax, 22
+    jb @@hitInLine0
+
+    cmp ax, 0FFE0h
+    ja @@hitInLine0
+
+    cmp ax, 42
+    jb @@hitInLine1
+
+    push 2
+    jmp @@checkHitRow
+
+@@hitInLine0:
+    push 0
+    jmp @@checkHitRow
+
+@@hitInLine1:
+    push 1
+
+@@checkHitRow:
     mov ax, [PlayerShootingRowLocation]
     sub ax, [AliensPrintStartRow]
-    mov cl, 36
-    div cl
-    mov cl, al      ; Column number in cl
+    add ax, 2
 
-    ; Convert to alien array index
-    mov al, bl
-    mov bl, 8
-    mul bl
-    add al, cl
-    mov bl, al      ; Target index in bl
-    xor bh, bh      
-    
-    ; Check if AOE attack
+    cmp ax, 0FFE0h
+    jb @@setForRowFind
+
+    xor cx, cx
+    jmp @@rowFound
+
+@@setForRowFind:
+    xor cx, cx
+    mov dx, 28
+@@findRow:
+    cmp ax, dx
+    jb @@rowFound
+    add dx, 36
+    inc cx
+    jmp @@findRow
+
+@@rowFound:
+    pop bx
+    shl bx, 3
+    add bx, cx
+
+    ; Now check for AOE
     cmp [byte ptr AOEEnabled], 1
     jne @@normalKill
 
@@ -788,6 +804,7 @@ KillAlien:
     cmp [byte ptr DebugBool], 1
     jne @@skipDebugPrint
 
+; Debugging
     ; Calculate row/col and print debug
     push ax
     push bx
@@ -967,11 +984,6 @@ proc CheckAndHitAlienSecondary
 @@hitAlien:
     call playSoundAlien
 
-	;set cursor to top left
-	xor bh, bh
-	xor dx, dx
-	mov ah, 2
-	int 10h
     ; Calculate hit position
     mov ax, [SecondaryBulletLineLocation]
     sub ax, [AliensPrintStartLine]
