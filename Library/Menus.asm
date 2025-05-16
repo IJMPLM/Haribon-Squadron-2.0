@@ -185,7 +185,7 @@ proc PrintMainMenu
 	xor al, al
 	mov bx, [ScoresFileHandle]
 	xor cx, cx
-	mov dx, 50 ;score of 5th place 
+	mov dx, 49 ; Position to read 5th place score (1 + 40 + 8)
 	int 21h
 
 	;get 5th place score:
@@ -196,8 +196,8 @@ proc PrintMainMenu
 	int 21h
 	
 	mov ax, [word ptr FileReadBuffer]
-	cmp ax, [Score]
-	ja @@printMenu ;if current score is lower than 5th place, don't ask
+	cmp [Score], ax     ; Compare current score with 5th place score
+	jbe @@printMenu     ; If current score is lower or equal, don't ask
 
 @@okToAsk:
 	push offset AskSaveFileName
@@ -221,10 +221,6 @@ proc PrintMainMenu
 	cmp ah, 1ch ;Y key
 	jne @@askYN
 	
-	; Close scores file before continuing
-	push [ScoresFileHandle]     ; Add this
-	call CloseFile             ; Add this
-
 	;ask user for name:
 	call ClearScreen
 
@@ -339,11 +335,12 @@ proc PrintMainMenu
     jmp @@printMenu
 
 @@replaceWithFifthPlace:
+	; Set pointer to start of 5th entry (1 + 40 = 41)
 	mov ah, 42h
 	mov al, 1
 	mov bx, [ScoresFileHandle]
 	xor cx, cx
-	mov dx, 37 ;start of 5th place in file (was 36, now 37 due to 2-byte scores)
+	mov dx, 41 ; Start of 5th record position
 	int 21h
 
 	jmp @@moveNameAndScoreToFile
@@ -800,8 +797,15 @@ proc PrintHighScoreTable
 	mov [byte ptr FileReadBuffer + 9], '$'
 	
 	mov ah, 9
+	mov dx, offset FileReadBuffer + 1
 	int 21h
 
+	;read score (2 bytes):
+	mov ah, 3Fh
+	mov bx, [ScoresFileHandle]
+	mov cx, 2
+	mov dx, offset FileReadBuffer + 1
+	int 21h
 
 	pop dx
 	push dx
@@ -811,13 +815,6 @@ proc PrintHighScoreTable
 	xor bh, bh
 	mov ah, 2
 	int 10h
-
-	;read score (2 bytes):
-	mov ah, 3Fh
-	mov bx, [ScoresFileHandle]
-	mov cx, 2
-	mov dx, offset FileReadBuffer + 1
-	int 21h
 
 	;print score:
 	mov ax, [word ptr FileReadBuffer + 1]
