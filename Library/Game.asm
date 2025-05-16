@@ -229,22 +229,6 @@ proc PrintStatsArea
 	push [BatteryFileHandle]
 	call CloseFile
 
-; @@printHealth:
-; 	push offset BHealthFileName
-; 	push offset BHealthFileHandle	
-; 	call OpenFile
-
-; 	push [BHealthFileHandle]
-; 	push BHealthLength
-; 	push BHealthHeight
-; 	push BHealthPrintStartLine
-; 	push BHealthPrintStartRow
-; 	push offset FileReadBuffer
-; 	call PrintBMP
-
-; 	push [BHealthFileHandle]
-; 	call CloseFile
-
 	;Score label:
 	xor bh, bh
 	mov dh, ScorePrintStartLine
@@ -819,7 +803,7 @@ endp InitializeLevel
 ; Initiating the game, setting the initial values
 ; -----------------------------------------------
 proc InitializeGame
-	mov [word ptr Score], 300 ; #Jieco
+	mov [word ptr Score], 0
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
