@@ -1,0 +1,1 @@
+start "" "DOSBOX\DOSBox.exe" -conf "Haribon-Squadron-2.0 - Debug.conf"

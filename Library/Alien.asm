@@ -204,11 +204,9 @@ endp ClearAliens
 proc UpdateAliensLocation
     ; Determine subpixel step based on level
     mov al, [Level]
-    cmp al, 4
-    jl @@levelLow
     cmp al, 7
-    jl @@levelMid
-    jmp @@levelHigh
+    jl @@levelLow
+    jnp @@levelMid
 
 @@levelLow:
     ; 3/4 speed → move only if counter reaches 4
@@ -222,7 +220,7 @@ proc UpdateAliensLocation
     ; 1/1 → always update
     jmp @@doUpdate
 
-@@levelHigh:
+@@levelHigh:    ; reserved for future use
     ; 5/4 speed → move every call, but do extra every 4th call
     inc [AliensSubpixelCounter]
     cmp [AliensSubpixelCounter], 4
