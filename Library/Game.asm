@@ -112,6 +112,7 @@ include "Library/NAssets.asm"
 CODESEG
 include "Library/Alien.asm"
 include "Library/Procs.asm"
+include "Library/SAssets.asm"
 include "Library/Combo.asm"
 
 ; -----------------------------------------------------------
@@ -1151,7 +1152,7 @@ proc PlayGame
 	call DisplayCombo				
 
 	@@skillFunctionBullet2:
-    call playSoundShoot
+    call PlaySoundSecondBullet     ; Add sound for secondary bullet
     mov ax, ShooterLineLocation
     sub ax, 6
     mov [word ptr SecondaryBulletLineLocation], ax
@@ -1174,6 +1175,7 @@ proc PlayGame
 	call DisplayCombo
     
 	@@skillFunctionInvincibility:
+    call PlaySoundShieldActivate   ; Add shield activation sound
     mov [byte ptr InvincibleActive], 1   
     mov [word ptr InvincibleCounter], 36
     jmp @@readKey
@@ -1191,6 +1193,7 @@ proc PlayGame
 	call DisplayCombo
 
     @@skillFunctionFreeze:
+    call PlaySoundFreezeActivate   ; Add freeze activation sound
     mov [byte ptr FreezeActive], 1   
     mov [word ptr FreezeCounter], 54
     call ClearAliens
@@ -1210,6 +1213,7 @@ proc PlayGame
 	call DisplayCombo
 
 	@@skillFunctionRegenerate:
+    call PlaySoundHeal             ; Add healing sound
     inc [LivesRemaining]
     call UpdateLives
     jmp @@readKey
@@ -1240,6 +1244,7 @@ proc PlayGame
 	call DisplayCombo
 
 	@@skillFunctionAOE:
+    call PlaySoundBombActivate     ; Add AOE/LED activation sound
 	mov [byte ptr AOEEnabled], 1
     jmp @@printShooterAgain
 
@@ -1378,7 +1383,11 @@ proc PlayGame
 	;Check if shooting already exists in screen:
 	cmp [byte ptr PlayerShootingExists], 0
 	jne @@moveShootingUp
+	cmp [byte ptr LaserEnabled], 1
+	je @@playLaser
 	call playSoundShoot
+	@@playLaser:
+    call PlaySoundLaser
 
 
 @@initiateShot:
@@ -1497,7 +1506,7 @@ proc PlayGame
 	call PrintColor
 
 	cmp [byte ptr AliensLeftAmount], 0
-	je @@setNewLevel
+	jbe @@setNewLevel
 
 	;Check if Alien hit:
 	call CheckAndHitAlien

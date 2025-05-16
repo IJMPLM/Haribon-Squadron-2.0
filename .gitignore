@@ -6,4 +6,4 @@ TODO.md
 .vscode/tasks.json
 myconfig.conf
 **/Tests/**
-Assets/SCORES.TXT
+Assets/SCORES**
