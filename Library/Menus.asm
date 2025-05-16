@@ -185,16 +185,17 @@ proc PrintMainMenu
 	xor al, al
 	mov bx, [ScoresFileHandle]
 	xor cx, cx
-	mov dx, 45 ;score of 5th place
+	mov dx, 46 ;score of 5th place (was 45, now 46 due to 2-byte scores)
 	int 21h
 
 	;get 5th place score:
 	mov ah, 3Fh
 	mov bx, [ScoresFileHandle]
-	mov cx, 1
+	mov cx, 2  ; read 2 bytes for score
 	mov dx, offset FileReadBuffer
 	int 21h
-	mov al, [FileReadBuffer]
+	
+	mov ax, [word ptr FileReadBuffer]
 	cmp ax, [Score]
 	ja @@printMenu ;if current score is lower than 5th place, don't ask
 
@@ -308,7 +309,7 @@ proc PrintMainMenu
 	;check where to initially place new score, before putting in correct rank:
 	mov al, [FileReadBuffer]
 	dec al
-	mov bl, 9 ;every score is 9 bytes (8 name + 1 score)
+	mov bl, 10 ;every score is 10 bytes (8 name + 2 score)
 	mul bl
 
 	mov dx, ax
@@ -327,7 +328,7 @@ proc PrintMainMenu
 	mov al, 1
 	mov bx, [ScoresFileHandle]
 	xor cx, cx
-	mov dx, 36 ;start of 5th place in file
+	mov dx, 37 ;start of 5th place in file (was 36, now 37 due to 2-byte scores)
 	int 21h
 
 	jmp @@moveNameAndScoreToFile
@@ -359,10 +360,10 @@ proc PrintMainMenu
 	mov dx, offset FileReadBuffer + 3
 	int 21h
 
-	;Move score to file:
+	;Move score to file (2 bytes):
 	mov ah, 40h
 	mov bx, [ScoresFileHandle]
-	mov cx, 1 ;one byte
+	mov cx, 2 ;two bytes
 	mov dx, offset Score
 	int 21h
 
@@ -596,7 +597,7 @@ endp PrintInstructions
 proc PrintHighScoreTable
 	;Score file structure:
 	;first byte - amount of players in table
-	;then 8 bytes of name, and a byte of score  x5 times
+	;then 8 bytes of name, and 2 bytes of score  x5 times
 
 	call ClearScreen
 
@@ -796,16 +797,15 @@ proc PrintHighScoreTable
 	mov ah, 2
 	int 10h
 
-	;read score:
+	;read score (2 bytes):
 	mov ah, 3Fh
 	mov bx, [ScoresFileHandle]
-	mov cx, 1
+	mov cx, 2
 	mov dx, offset FileReadBuffer + 1
 	int 21h
 
 	;print score:
-	xor ah, ah
-	mov al, [FileReadBuffer + 1]
+	mov ax, [word ptr FileReadBuffer + 1]
 	push ax
 	call HexToDecimal
 
