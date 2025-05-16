@@ -1522,7 +1522,7 @@ proc PlayGame
 	call PrintColor
 
 	cmp [byte ptr AliensLeftAmount], 0
-	je @@setNewLevel
+	jbe @@setNewLevel
 
 	;Check if Alien hit:
 	call CheckAndHitAlien
