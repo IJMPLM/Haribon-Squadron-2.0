@@ -681,7 +681,7 @@ proc CheckAndHitAlien
     ; Now check for AOE
     cmp [byte ptr AOEEnabled], 1
     jne @@normalKill
-    call PlaySoundAOEHit
+    call PlaySoundBombHit
     
     ; Kill center alien first
     push bx
@@ -730,8 +730,8 @@ proc CheckAndHitAlien
     jmp @@removeShot
 
 @@normalKill:
-    call playSoundAlien
     call KillAlien
+    call playSoundAlien
 
 @@removeShot:
 	push 2
@@ -829,6 +829,7 @@ proc CheckAndHitAlien
     int 21h
     
     @@collideNoDebug:
+    call PlaySoundBulletCollision
 
     push [SplatterFileHandle]
 	push SplatterLength
@@ -1200,6 +1201,7 @@ proc CheckAndHitAlienSecondary
     
     @@collideNoDebug:
 
+    call PlaySoundBulletCollision
     push [SplatterFileHandle]
 	push SplatterLength
 	push SplatterHeight

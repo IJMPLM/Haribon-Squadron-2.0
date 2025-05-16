@@ -160,6 +160,31 @@ proc PlaySoundBulletHit
     ret
 endp PlaySoundBulletHit
 
+proc PlaySoundBulletCollision
+    mov al, 0b6h ; Set channel 2 (the PC speaker) to operate in square wave mode
+    out 43h, al
+	mov ax, 0c74h ; 0c74h is 3276 in decimal, which is the frequency of the sound
+    out 42h, al
+    mov al, ah
+    out 42h, al
+    in al, 61h
+    or al, 3 ; Turn on the speaker
+    out 61h, al
+
+    ; Delay for a while
+    ;delay for 800ms
+	mov cx, 0ffffh
+    delaybeepmenu:
+        nop
+        loop delaybeepmenu
+
+    ; Turn off the speaker
+    in al, 61h
+    and al, 0fch
+    out 61h, al
+
+    ret
+endp PlaySoundBulletCollision
 
 
 ; ----------------------------------------------------------------------
