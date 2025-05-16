@@ -244,17 +244,14 @@ proc SortScoresFile
 @@compareScores:
 	push cx
 
-	;hold higher rank at offset FileReadBuffer + 1,
-	;lower at FileReadBuffer + 10
-
 	;set to beginning of higher rank:
 	mov al, cl
 	dec al
-	mov bl, 9
+	mov bl, 10    ; Each record is now 10 bytes (8 name + 2 score)
 	mul bl
 
 	mov dx, ax
-	inc dx ;ignore first byte (amount of scores in file)
+	inc dx        ; ignore first byte (amount of scores in file)
 	mov ah, 42h
 	xor al, al
 	mov bx, [ScoresFileHandle]
@@ -264,26 +261,22 @@ proc SortScoresFile
 	;read two ranks info:
 	mov ah, 3Fh
 	mov bx, [ScoresFileHandle]
-	mov cx, 18 ;8 name + 1 score = 9 bytes, 9 * 2 = 18 bytes
+	mov cx, 20    ; Read 2 records × 10 bytes each = 20 bytes
 	mov dx, offset FileReadBuffer + 1
 	int 21h
 
-
 	;check if scores need to be replaced:
-	mov al, [FileReadBuffer + 9] ;higher rank score
-	cmp al, [FileReadBuffer + 18] ;compare with lower rank score
-
+	mov ax, [word ptr FileReadBuffer + 8]  ; higher rank score (2 bytes)
+	cmp ax, [word ptr FileReadBuffer + 18] ; compare with lower rank score (2 bytes)
 	jae @@stopComparing
 
-
-;replace both values:
-
+	;replace both values:
 	pop cx
 	push cx
 
 	;set to beginning of lower rank:
 	mov al, cl
-	mov bl, 9
+	mov bl, 10    ; Use 10 instead of 9 for record size
 	mul bl
 
 	mov dx, ax
@@ -297,7 +290,7 @@ proc SortScoresFile
 	;move previously higher rank to lower rank:
 	mov ah, 40h
 	mov bx, [ScoresFileHandle]
-	mov cx, 9 ;copy 9 bytes
+	mov cx, 10    ; Copy 10 bytes instead of 9
 	mov dx, offset FileReadBuffer + 1 ;start of saved higher rank
 	int 21h
 
@@ -307,7 +300,7 @@ proc SortScoresFile
 	;set to beginning of higher rank:
 	mov al, cl
 	dec al
-	mov bl, 9
+	mov bl, 10    ; Use 10 instead of 9 for record size
 	mul bl
 
 	mov dx, ax
@@ -321,8 +314,8 @@ proc SortScoresFile
 	;move previously lower rank to higher rank:
 	mov ah, 40h
 	mov bx, [ScoresFileHandle]
-	mov cx, 9 ;copy 9 bytes
-	mov dx, offset FileReadBuffer + 10 ;start of saved lower rank
+	mov cx, 10    ; Copy 10 bytes instead of 9
+	mov dx, offset FileReadBuffer + 11 ;start of saved lower rank
 	int 21h
 
 	pop cx

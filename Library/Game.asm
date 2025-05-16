@@ -799,7 +799,7 @@ endp InitializeLevel
 ; Initiating the game, setting the initial values
 ; -----------------------------------------------
 proc InitializeGame
-	mov [word ptr Score], 0
+	mov [word ptr Score], 300
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
@@ -1053,7 +1053,7 @@ proc PlayGame
 	mov ah, 2
 	int 21h
 
-	push 18
+	push 0
 	call Delay
 
 	pop dx

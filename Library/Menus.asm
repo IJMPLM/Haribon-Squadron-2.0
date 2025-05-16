@@ -142,21 +142,21 @@ proc PrintMainMenu
 	jmp @@getAmountFirstTime
 
 @@createNewFile:
-	xor cx, cx
-	mov dx, offset ScoresFileName
-	mov ah, 3Ch
-	int 21h
+    ; Create new file
+    xor cx, cx
+    mov dx, offset ScoresFileName
+    mov ah, 3Ch
+    int 21h
+    mov [ScoresFileHandle], ax
 
-	mov [ScoresFileHandle], ax ;save new FileHandle
-
-	;set current scores amount to zero (new file...):
-	mov [byte ptr FileReadBuffer], 0
-
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 1
-	mov dx, offset FileReadBuffer
-	int 21h
+    ; Initialize with 0 scores
+    xor al, al
+    mov [FileReadBuffer], al
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 1
+    mov dx, offset FileReadBuffer
+    int 21h
 
 @@getAmountFirstTime:
 	;set score file pointer to start:
@@ -335,49 +335,54 @@ proc PrintMainMenu
     jmp @@printMenu
 
 @@replaceWithFifthPlace:
-	; Set pointer to start of 5th entry (1 + 40 = 41)
-	mov ah, 42h
-	mov al, 1
-	mov bx, [ScoresFileHandle]
-	xor cx, cx
-	mov dx, 41 ; Start of 5th record position
-	int 21h
-
-	jmp @@moveNameAndScoreToFile
-
+    ; Position file pointer at 5th entry (1 byte header + 4*10 bytes)
+    mov ah, 42h
+    mov al, 0          ; Absolute positioning
+    mov bx, [ScoresFileHandle]
+    xor cx, cx
+    mov dx, 46         ; Start of 5th record
+    int 21h
+    jmp @@moveNameAndScoreToFile
 
 @@putScoreIfTableIsEmpty:
-	;set file pointer to start of file:
-	mov ah, 42h
-	xor al, al
-	mov bx, [ScoresFileHandle]
-	xor cx, cx
-	xor dx, dx
-	int 21h
+    ; Position at start to update count
+    mov ah, 42h
+    xor al, al
+    mov bx, [ScoresFileHandle]
+    xor cx, cx
+    xor dx, dx
+    int 21h
 
-	mov [byte ptr FileReadBuffer], 1
+    ; Write count of 1
+    mov [byte ptr FileReadBuffer], 1
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 1
+    mov dx, offset FileReadBuffer
+    int 21h
 
-	;move updated amount of players to file:
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 1 ;one byte
-	mov dx, offset FileReadBuffer
-	int 21h
+    ; Position after header for writing score
+    mov ah, 42h
+    mov al, 0
+    mov bx, [ScoresFileHandle]
+    xor cx, cx
+    mov dx, 1          ; Skip header byte
+    int 21h
 
 @@moveNameAndScoreToFile:
-	;Move name to file
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 8 ;name length
-	mov dx, offset FileReadBuffer + 3
-	int 21h
+    ; Write name (8 bytes)
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 8
+    mov dx, offset FileReadBuffer + 3
+    int 21h
 
-	;Move score to file (2 bytes):
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 2 ;two bytes
-	mov dx, offset Score
-	int 21h
+    ; Write score (2 bytes)
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 2
+    mov dx, offset Score
+    int 21h
 
 
 	push [ScoresFileHandle]
