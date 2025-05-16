@@ -3,14 +3,14 @@ CODESEG
 proc PlaySoundLaser
     mov al, 0b6h
     out 43h, al
-    mov ax, 0400h ; High frequency for laser
+    mov ax, 444 ; High frequency for laser
     out 42h, al
     mov al, ah
     out 42h, al
     in al, 61h
     or al, 3
     out 61h, al
-    mov cx, 1000h
+    mov cx, 0ffffh
     delay_laser:
         nop
         loop delay_laser
