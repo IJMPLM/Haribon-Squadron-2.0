@@ -337,10 +337,10 @@ proc PrintMainMenu
 @@replaceWithFifthPlace:
     ; Position file pointer at 5th entry (1 byte header + 4*10 bytes)
     mov ah, 42h
-    mov al, 0          ; Absolute positioning
+    mov al, 1         
     mov bx, [ScoresFileHandle]
     xor cx, cx
-    mov dx, 46         ; Start of 5th record
+    mov dx, 40         ; Start of 5th record
     int 21h
     jmp @@moveNameAndScoreToFile
 
