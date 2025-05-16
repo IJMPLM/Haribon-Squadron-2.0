@@ -7,6 +7,10 @@
 ; - Checking if an Alien was hit by the player's shot
 ; ---------------------------------------------------------
 
+DATASEG
+	AliensSubpixelCounter db 0
+
+
 CODESEG
 
 ; ---------------------------------------------------------
@@ -198,33 +202,72 @@ endp ClearAliens
 ; Going down after moving a full line, changing directions
 ; --------------------------------------------------------
 proc UpdateAliensLocation
-	cmp [byte ptr AliensMovesToSideDone], 8
-	je @@reverseDirectionGoDown
+    ; Determine subpixel step based on level
+    mov al, [Level]
+    cmp al, 4
+    jl @@levelLow
+    cmp al, 7
+    jl @@levelMid
+    jmp @@levelHigh
 
+@@levelLow:
+    ; 3/4 speed → move only if counter reaches 4
+    inc [AliensSubpixelCounter]
+    cmp [AliensSubpixelCounter], 4
+    jl @@skipUpdate
+    mov [AliensSubpixelCounter], 0
+    jmp @@doUpdate
 
-	inc [byte ptr AliensMovesToSideDone]
+@@levelMid:
+    ; 1/1 → always update
+    jmp @@doUpdate
 
+@@levelHigh:
+    ; 5/4 speed → move every call, but do extra every 4th call
+    inc [AliensSubpixelCounter]
+    cmp [AliensSubpixelCounter], 4
+    jl @@doUpdate
+    mov [AliensSubpixelCounter], 0
+    ; Do update twice for a faster effect
+    call DoUpdateAliens
+    call DoUpdateAliens
+    ret
 
-	cmp [byte ptr AliensMoveRightBool], 1
-	je @@moveRight
+@@doUpdate:
+    call DoUpdateAliens
+    ret
 
-	;Left:
-	sub [word ptr AliensPrintStartRow], 4
-	jmp @@procEnd
+@@skipUpdate:
+    ret
+endp UpdateAliensLocation
 
+proc DoUpdateAliens
+    cmp [byte ptr AliensMovesToSideDone], 8
+    je @@reverseDirectionGoDown
+
+    inc [byte ptr AliensMovesToSideDone]
+
+    cmp [byte ptr AliensMoveRightBool], 1
+    je @@moveRight
+
+    ; Move Left:
+    sub [word ptr AliensPrintStartRow], 4
+    jmp @@end
 
 @@moveRight:
-	add [word ptr AliensPrintStartRow], 4
-	jmp @@procEnd
+    add [word ptr AliensPrintStartRow], 4
+    jmp @@end
 
 @@reverseDirectionGoDown:
-	xor [byte ptr AliensMoveRightBool], 1
-	mov [byte ptr AliensMovesToSideDone], 0
-	add [word ptr AliensPrintStartLine], 4
-	
-@@procEnd:
-	ret
-endp UpdateAliensLocation
+    xor [byte ptr AliensMoveRightBool], 1
+    mov [byte ptr AliensMovesToSideDone], 0
+    add [word ptr AliensPrintStartLine], 4
+
+@@end:
+    ret
+endp DoUpdateAliens
+
+
 
 
 ; ---------------------------------------------------------------
@@ -262,16 +305,16 @@ proc CheckAndMoveAliens
 
     ;Move:
     call ClearAliens
-    call PrintAliens
     call UpdateAliensLocation
+    call PrintAliens
     mov [byte ptr AliensLoopMoveCounter], 0
     jmp @@endProc
 
 @@moveLeft:
     ;Move aliens left
     call ClearAliens
-    call PrintAliens
     call UpdateAliensLocation
+    call PrintAliens
     mov [byte ptr AliensLoopMoveCounter], 0
 
 @@skipAllMovement:
