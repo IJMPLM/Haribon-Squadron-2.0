@@ -23,6 +23,7 @@ DATASEG
 	NameString				db	'Name$'
 	JustScoreString			db	'Score$'
 
+	UseTheKeyboardString	db	'Use the keyboard $'
 	EnterYourNameString		db	'Enter your name, Haribon: $'
 
 	ScoreSavedString		db	'Your score was saved!$'

@@ -185,7 +185,7 @@ proc PrintMainMenu
 	xor al, al
 	mov bx, [ScoresFileHandle]
 	xor cx, cx
-	mov dx, 46 ;score of 5th place (was 45, now 46 due to 2-byte scores)
+	mov dx, 50 ;score of 5th place 
 	int 21h
 
 	;get 5th place score:
@@ -239,10 +239,21 @@ proc PrintMainMenu
 
 	call PrintBackground
 
+; First line (Use the keyboard)
 	mov ah, 2
 	xor bh, bh
-	mov dh, 12
-	mov dl, 5
+	mov dh, 11          ; One line higher
+	mov dl, 11           ; More to the left
+	int 10h
+
+	mov ah, 9
+	mov dx, offset UseTheKeyboardString
+	int 21h
+
+	; Second line (Enter your name)
+	mov ah, 2
+	mov dh, 12          ; Next line
+	mov dl, 7           ; Same column alignment
 	int 10h
 
 	mov ah, 9
@@ -250,6 +261,13 @@ proc PrintMainMenu
 	int 21h
 
 ;Get name:
+
+
+	; Third line (Input field)
+	mov ah, 2
+	mov dh, 16          ; Next line
+	mov dl, 15           ; Same column alignment
+	int 10h
 
 	;zero the current info at 'buffer'
 	push ds
