@@ -211,29 +211,20 @@ proc PrintMainMenu
 	push [AskSaveFileHandle]
 	call CloseFile
 
-	; Reload space background files since they may have been closed
-	push offset SpaceBgFileName
-	push offset SpaceBgFileHandle
-	call OpenFile
-	
-	push offset SpaceBg2FileName 
-	push offset SpaceBg2FileHandle
-	call OpenFile
-	
-	push offset SpaceBg3FileName
-	push offset SpaceBg3FileHandle
-	call OpenFile
-
 @@askYN:
 	xor ah, ah
 	int 16h
 
 	cmp ah, 01 ;N key
-	je @@printMenu
+	je @@closeAndPrintMenu
 
 	cmp ah, 1ch ;Y key
 	jne @@askYN
 	
+	; Close scores file before continuing
+	push [ScoresFileHandle]     ; Add this
+	call CloseFile             ; Add this
+
 	;ask user for name:
 	call ClearScreen
 
@@ -340,6 +331,12 @@ proc PrintMainMenu
 	int 21h
 
 	jmp @@moveNameAndScoreToFile
+
+; Add new cleanup label
+@@closeAndPrintMenu:
+    push [ScoresFileHandle]    ; Close scores file
+    call CloseFile
+    jmp @@printMenu
 
 @@replaceWithFifthPlace:
 	mov ah, 42h
