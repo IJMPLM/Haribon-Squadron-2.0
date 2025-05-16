@@ -1116,16 +1116,16 @@ proc CheckAndHitAlienSecondary
 
 @@hitInLine0:
     push 0
-    jmp @@checkhitRow
+    jmp @@checkHitRow
 
 @@hitInLine1:
     push 1
+    jmp @@checkHitRow
 
 @@hitInLine2:
     push 2
-    jmp @@checkHitRow
 
-@@checkhitRow:
+@@checkHitRow:
     mov ax, [SecondaryShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2
