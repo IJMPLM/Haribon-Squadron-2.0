@@ -879,7 +879,7 @@ proc PrintHighScoreTable
 	xor ah, ah
 	int 16h
 
-	cmp ah, 53h ;Delete
+	cmp ah, 1Ch ;enter
 	je @@printBackgroundAgainBeforeDelete
 
 	cmp ah, 1 ;Esc
