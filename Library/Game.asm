@@ -1386,6 +1386,7 @@ proc PlayGame
 	cmp [byte ptr LaserEnabled], 1
 	je @@playLaser
 	call playSoundShoot
+	jmp @@initiateShot
 	@@playLaser:
     call PlaySoundLaser
 
