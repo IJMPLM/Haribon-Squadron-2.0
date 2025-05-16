@@ -198,33 +198,59 @@ endp ClearAliens
 ; Going down after moving a full line, changing directions
 ; --------------------------------------------------------
 proc UpdateAliensLocation
-	cmp [byte ptr AliensMovesToSideDone], 8
-	je @@reverseDirectionGoDown
+    ; Determine number of updates based on level
+    movzx cx, [byte ptr Level]     ; Load Level into CX with zero extension
+    cmp cx, 4
+    jl @@oneUpdate
+    cmp cx, 7
+    jl @@twoUpdates
+    jmp @@threeUpdates
 
+@@oneUpdate:
+    mov cl, 1
+    jmp @@loopStart
 
-	inc [byte ptr AliensMovesToSideDone]
+@@twoUpdates:
+    mov cl, 2
+    jmp @@loopStart
 
+@@threeUpdates:
+    mov cl, 3
 
-	cmp [byte ptr AliensMoveRightBool], 1
-	je @@moveRight
+@@loopStart:
+    mov ch, 0                ; Clear upper byte of CX to use CL as loop counter
 
-	;Left:
-	sub [word ptr AliensPrintStartRow], 4
-	jmp @@procEnd
+@@loop:
+    ; === UpdateAliens logic ===
+    cmp [byte ptr AliensMovesToSideDone], 8
+    je @@reverseDirectionGoDown
 
+    inc [byte ptr AliensMovesToSideDone]
+
+    cmp [byte ptr AliensMoveRightBool], 1
+    je @@moveRight
+
+    ; Move Left:
+    sub [word ptr AliensPrintStartRow], 4
+    jmp @@nextLoop
 
 @@moveRight:
-	add [word ptr AliensPrintStartRow], 4
-	jmp @@procEnd
+    add [word ptr AliensPrintStartRow], 4
+    jmp @@nextLoop
 
 @@reverseDirectionGoDown:
-	xor [byte ptr AliensMoveRightBool], 1
-	mov [byte ptr AliensMovesToSideDone], 0
-	add [word ptr AliensPrintStartLine], 4
-	
+    xor [byte ptr AliensMoveRightBool], 1
+    mov [byte ptr AliensMovesToSideDone], 0
+    add [word ptr AliensPrintStartLine], 4
+
+@@nextLoop:
+    dec cl
+    jnz @@loop
+
 @@procEnd:
-	ret
+    ret
 endp UpdateAliensLocation
+
 
 
 ; ---------------------------------------------------------------
@@ -262,16 +288,16 @@ proc CheckAndMoveAliens
 
     ;Move:
     call ClearAliens
-    call PrintAliens
     call UpdateAliensLocation
+    call PrintAliens
     mov [byte ptr AliensLoopMoveCounter], 0
     jmp @@endProc
 
 @@moveLeft:
     ;Move aliens left
     call ClearAliens
-    call PrintAliens
     call UpdateAliensLocation
+    call PrintAliens
     mov [byte ptr AliensLoopMoveCounter], 0
 
 @@skipAllMovement:
