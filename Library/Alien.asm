@@ -681,7 +681,8 @@ proc CheckAndHitAlien
     ; Now check for AOE
     cmp [byte ptr AOEEnabled], 1
     jne @@normalKill
-
+    call PlaySoundAOEHit
+    
     ; Kill center alien first
     push bx
     mov [byte ptr AOEKillDirection], 0
@@ -729,6 +730,7 @@ proc CheckAndHitAlien
     jmp @@removeShot
 
 @@normalKill:
+    call playSoundAlien
     call KillAlien
 
 @@removeShot:
