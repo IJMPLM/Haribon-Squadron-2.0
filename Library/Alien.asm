@@ -7,6 +7,10 @@
 ; - Checking if an Alien was hit by the player's shot
 ; ---------------------------------------------------------
 
+DATASEG
+	AliensSubpixelCounter db 0
+
+
 CODESEG
 
 ; ---------------------------------------------------------
@@ -198,30 +202,46 @@ endp ClearAliens
 ; Going down after moving a full line, changing directions
 ; --------------------------------------------------------
 proc UpdateAliensLocation
-    ; Determine number of updates based on level
-    movzx cx, [byte ptr Level]     ; Load Level into CX with zero extension
-    cmp cx, 4
-    jl @@oneUpdate
-    cmp cx, 7
-    jl @@twoUpdates
-    jmp @@threeUpdates
+    ; Determine subpixel step based on level
+    mov al, [Level]
+    cmp al, 4
+    jl @@levelLow
+    cmp al, 7
+    jl @@levelMid
+    jmp @@levelHigh
 
-@@oneUpdate:
-    mov cl, 1
-    jmp @@loopStart
+@@levelLow:
+    ; 3/4 speed → move only if counter reaches 4
+    inc [AliensSubpixelCounter]
+    cmp [AliensSubpixelCounter], 4
+    jl @@skipUpdate
+    mov [AliensSubpixelCounter], 0
+    jmp @@doUpdate
 
-@@twoUpdates:
-    mov cl, 2
-    jmp @@loopStart
+@@levelMid:
+    ; 1/1 → always update
+    jmp @@doUpdate
 
-@@threeUpdates:
-    mov cl, 3
+@@levelHigh:
+    ; 5/4 speed → move every call, but do extra every 4th call
+    inc [AliensSubpixelCounter]
+    cmp [AliensSubpixelCounter], 4
+    jl @@doUpdate
+    mov [AliensSubpixelCounter], 0
+    ; Do update twice for a faster effect
+    call DoUpdateAliens
+    call DoUpdateAliens
+    ret
 
-@@loopStart:
-    mov ch, 0                ; Clear upper byte of CX to use CL as loop counter
+@@doUpdate:
+    call DoUpdateAliens
+    ret
 
-@@loop:
-    ; === UpdateAliens logic ===
+@@skipUpdate:
+    ret
+endp UpdateAliensLocation
+
+proc DoUpdateAliens
     cmp [byte ptr AliensMovesToSideDone], 8
     je @@reverseDirectionGoDown
 
@@ -232,24 +252,21 @@ proc UpdateAliensLocation
 
     ; Move Left:
     sub [word ptr AliensPrintStartRow], 4
-    jmp @@nextLoop
+    jmp @@end
 
 @@moveRight:
     add [word ptr AliensPrintStartRow], 4
-    jmp @@nextLoop
+    jmp @@end
 
 @@reverseDirectionGoDown:
     xor [byte ptr AliensMoveRightBool], 1
     mov [byte ptr AliensMovesToSideDone], 0
     add [word ptr AliensPrintStartLine], 4
 
-@@nextLoop:
-    dec cl
-    jnz @@loop
-
-@@procEnd:
+@@end:
     ret
-endp UpdateAliensLocation
+endp DoUpdateAliens
+
 
 
 

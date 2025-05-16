@@ -7,6 +7,7 @@ DATASEG
 	AlienLength						equ	32
 	AlienHeight						equ	32
 
+
 	Alien2FileName					db	'Assets/Alien2.bmp',0
 	Alien2FileHandle				dw	?
 
