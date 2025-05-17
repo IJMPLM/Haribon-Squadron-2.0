@@ -197,7 +197,7 @@ proc PrintMainMenu
 	
 	mov ax, [word ptr FileReadBuffer]
 	cmp [Score], ax     ; Compare current score with 5th place score
-	jbe @@printMenu     ; If current score is lower or equal, don't ask
+	jbe @@closeAndPrintMenu     ; If current score is lower or equal, don't ask
 
 @@okToAsk:
 	push offset AskSaveFileName

@@ -21,19 +21,44 @@ proc PlaySoundLaser
 endp PlaySoundLaser
 
 proc PlaySoundHeal
+    ; First tone (lower pitch)
     mov al, 0b6h
     out 43h, al
-    mov ax, 2000h ; Much higher, pleasant healing tone
+    mov ax, 2000  ; Start with lower pitch
     out 42h, al
     mov al, ah
     out 42h, al
     in al, 61h
     or al, 3
     out 61h, al
-    mov cx, 1000h
-    delay_heal:
-        nop
-        loop delay_heal
+    
+    push 1        ; Quick first tone
+    call Delay
+    
+    ; Turn off speaker between tones
+    in al, 61h
+    and al, 0fch
+    out 61h, al
+    
+    ; Very short gap
+    push 1
+    call Delay
+    
+    ; Second tone (higher pitch)
+    mov al, 0b6h
+    out 43h, al
+    mov ax, 1500  ; Higher pitch
+    out 42h, al
+    mov al, ah
+    out 42h, al
+    in al, 61h
+    or al, 3
+    out 61h, al
+    
+    push 1        ; Quick second tone
+    call Delay
+    
+    ; Turn off speaker
     in al, 61h
     and al, 0fch
     out 61h, al
@@ -43,17 +68,18 @@ endp PlaySoundHeal
 proc PlaySoundShieldActivate
     mov al, 0b6h
     out 43h, al
-    mov ax, 0500h ; Deeper, more protective sound
+    mov ax, 5000  ; Medium-low frequency for closer, more impactful shield sound
     out 42h, al
     mov al, ah
     out 42h, al
     in al, 61h
     or al, 3
     out 61h, al
-    mov cx, 1000h
-    delay_shield:
-        nop
-        loop delay_shield
+    
+    push 2        ; Moderate duration
+    call Delay
+    
+    ; Turn off speaker
     in al, 61h
     and al, 0fch
     out 61h, al
@@ -103,22 +129,24 @@ endp PlaySoundBombHit
 proc PlaySoundFreezeActivate
     mov al, 0b6h
     out 43h, al
-    mov ax, 2500h ; Very high crystalline sound
+    mov ax, 8000   ; Lower pitch for ice effect
     out 42h, al
     mov al, ah
     out 42h, al
     in al, 61h
     or al, 3
     out 61h, al
-    mov cx, 1000h
-    delay_freeze:
-        nop
-        loop delay_freeze
+    
+    push 1        ; Moderate duration
+    call Delay
+    
+    ; Turn off speaker
     in al, 61h
     and al, 0fch
     out 61h, al
     ret
 endp PlaySoundFreezeActivate
+
 
 proc PlaySoundSecondBullet
     mov al, 0b6h
@@ -216,33 +244,30 @@ endp playSoundShoot
 ; ----------------------------------------------------------------------
 
 proc playSoundDeath
-    mov al, 0b6h ; Set channel 2 (the PC speaker) to operate in square wave mode
+    mov al, 0b6h
     out 43h, al
-    mov ax, 0c74h ; Set the frequency of the sound (in this case, roughly 3276 Hz)
+    mov ax, 0c74h ; Keep original frequency
     out 42h, al
     mov al, ah
     out 42h, al
     in al, 61h
-    or al, 3 ; Turn on the speaker
+    or al, 3
     out 61h, al
 
-    ; Delay for a while
-    mov cx, 0ffffh
-    mov bx, 0ah ; Repeat the delay 10 times
-    outer_delay:
-        push cx ; Save the original value of cx
-        delaySoundDeath:
-            nop
-            loop delaySoundDeath
-        pop cx ; Restore the original value of cx
-        dec bx ; Decrease the counter
-        jnz outer_delay ; Repeat the delay if bx is not zero
+    ; Simpler delay structure
+    mov bx, 14h ; Number of iterations
+@@outer_delay:
+    mov cx, 0FFFFh
+@@delay_loop:
+    nop
+    nop
+    loop @@delay_loop
+    dec bx
+    jnz @@outer_delay
 
-    ; Turn off the speaker
     in al, 61h
     and al, 0fch
     out 61h, al
-
     ret
 endp playSoundDeath
 

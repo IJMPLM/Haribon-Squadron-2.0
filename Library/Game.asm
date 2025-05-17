@@ -1058,7 +1058,7 @@ proc PlayGame
 	mov ah, 2
 	int 21h
 
-	push 18
+	push 0
 	call Delay
 
 	pop dx
@@ -1386,6 +1386,7 @@ proc PlayGame
 	cmp [byte ptr LaserEnabled], 1
 	je @@playLaser
 	call playSoundShoot
+	jmp @@initiateShot
 	@@playLaser:
     call PlaySoundLaser
 
