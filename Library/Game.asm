@@ -799,7 +799,7 @@ endp InitializeLevel
 ; Initiating the game, setting the initial values
 ; -----------------------------------------------
 proc InitializeGame
-	mov [word ptr Score], 300
+	mov [word ptr Score], 0
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
@@ -1058,7 +1058,7 @@ proc PlayGame
 	mov ah, 2
 	int 21h
 
-	push 0
+	push 18
 	call Delay
 
 	pop dx
@@ -1506,7 +1506,7 @@ proc PlayGame
 	push BlackColor
 	call PrintColor
 
-	cmp [byte ptr AliensLeftAmount], 0
+	cmp [byte ptr AliensLeftAmount], 1
 	jbe @@setNewLevel
 
 	;Check if Alien hit:
