@@ -204,11 +204,9 @@ endp ClearAliens
 proc UpdateAliensLocation
     ; Determine subpixel step based on level
     mov al, [Level]
-    cmp al, 4
-    jl @@levelLow
     cmp al, 7
-    jl @@levelMid
-    jmp @@levelHigh
+    jl @@levelLow
+    jnp @@levelMid
 
 @@levelLow:
     ; 3/4 speed → move only if counter reaches 4
@@ -222,7 +220,7 @@ proc UpdateAliensLocation
     ; 1/1 → always update
     jmp @@doUpdate
 
-@@levelHigh:
+@@levelHigh:    ; reserved for future use
     ; 5/4 speed → move every call, but do extra every 4th call
     inc [AliensSubpixelCounter]
     cmp [AliensSubpixelCounter], 4
@@ -1116,16 +1114,16 @@ proc CheckAndHitAlienSecondary
 
 @@hitInLine0:
     push 0
-    jmp @@checkhitRow
+    jmp @@checkHitRow
 
 @@hitInLine1:
     push 1
+    jmp @@checkHitRow
 
 @@hitInLine2:
     push 2
-    jmp @@checkHitRow
 
-@@checkhitRow:
+@@checkHitRow:
     mov ax, [SecondaryShootingRowLocation]
     sub ax, [AliensPrintStartRow]
     add ax, 2

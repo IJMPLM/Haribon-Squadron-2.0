@@ -11,7 +11,7 @@ include "Library/GAssets.asm"
 include "Library/NAssets.asm"
 
 	DebugBool						db	0
-	UnliSkills						db  1
+	UnliSkills						db  0
 
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
@@ -779,7 +779,7 @@ proc InitializeLevel
 	call MoveToStart
 
 	; #Jieco
-	call ResetCombo ; resets combo every stage cleared
+	; call ResetCombo ; resets combo every stage cleared ;reimplement if needed
 
 	cld
 	push ds
@@ -799,7 +799,7 @@ endp InitializeLevel
 ; Initiating the game, setting the initial values
 ; -----------------------------------------------
 proc InitializeGame
-	mov [word ptr Score], 0
+	mov [word ptr Score], 300
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
@@ -950,6 +950,11 @@ endp CheckIfAliensReachedBottom
 ; Handles shooter + Aliens hits and deaths, movements, etc.
 ; -----------------------------------------------------------
 proc PlayGame
+	cmp [byte ptr DebugBool], 1
+	jne @@skipDebug
+	mov [byte ptr  UnliSkills], 1
+
+@@skipDebug:
 	; Open all alien sprites
 	push offset AlienFileName
 	push offset AlienFileHandle

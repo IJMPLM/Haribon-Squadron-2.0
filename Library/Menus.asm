@@ -142,21 +142,21 @@ proc PrintMainMenu
 	jmp @@getAmountFirstTime
 
 @@createNewFile:
-	xor cx, cx
-	mov dx, offset ScoresFileName
-	mov ah, 3Ch
-	int 21h
+    ; Create new file
+    xor cx, cx
+    mov dx, offset ScoresFileName
+    mov ah, 3Ch
+    int 21h
+    mov [ScoresFileHandle], ax
 
-	mov [ScoresFileHandle], ax ;save new FileHandle
-
-	;set current scores amount to zero (new file...):
-	mov [byte ptr FileReadBuffer], 0
-
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 1
-	mov dx, offset FileReadBuffer
-	int 21h
+    ; Initialize with 0 scores
+    xor al, al
+    mov [FileReadBuffer], al
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 1
+    mov dx, offset FileReadBuffer
+    int 21h
 
 @@getAmountFirstTime:
 	;set score file pointer to start:
@@ -185,7 +185,7 @@ proc PrintMainMenu
 	xor al, al
 	mov bx, [ScoresFileHandle]
 	xor cx, cx
-	mov dx, 46 ;score of 5th place (was 45, now 46 due to 2-byte scores)
+	mov dx, 49 ; Position to read 5th place score (1 + 40 + 8)
 	int 21h
 
 	;get 5th place score:
@@ -196,8 +196,8 @@ proc PrintMainMenu
 	int 21h
 	
 	mov ax, [word ptr FileReadBuffer]
-	cmp ax, [Score]
-	ja @@printMenu ;if current score is lower than 5th place, don't ask
+	cmp [Score], ax     ; Compare current score with 5th place score
+	jbe @@printMenu     ; If current score is lower or equal, don't ask
 
 @@okToAsk:
 	push offset AskSaveFileName
@@ -221,19 +221,26 @@ proc PrintMainMenu
 	cmp ah, 1ch ;Y key
 	jne @@askYN
 	
-	; Close scores file before continuing
-	push [ScoresFileHandle]     ; Add this
-	call CloseFile             ; Add this
-
 	;ask user for name:
 	call ClearScreen
 
 	call PrintBackground
 
+; First line (Use the keyboard)
 	mov ah, 2
 	xor bh, bh
-	mov dh, 12
-	mov dl, 5
+	mov dh, 11          ; One line higher
+	mov dl, 11           ; More to the left
+	int 10h
+
+	mov ah, 9
+	mov dx, offset UseTheKeyboardString
+	int 21h
+
+	; Second line (Enter your name)
+	mov ah, 2
+	mov dh, 12          ; Next line
+	mov dl, 7           ; Same column alignment
 	int 10h
 
 	mov ah, 9
@@ -241,6 +248,13 @@ proc PrintMainMenu
 	int 21h
 
 ;Get name:
+
+
+	; Third line (Input field)
+	mov ah, 2
+	mov dh, 16          ; Next line
+	mov dl, 15           ; Same column alignment
+	int 10h
 
 	;zero the current info at 'buffer'
 	push ds
@@ -321,48 +335,54 @@ proc PrintMainMenu
     jmp @@printMenu
 
 @@replaceWithFifthPlace:
-	mov ah, 42h
-	mov al, 1
-	mov bx, [ScoresFileHandle]
-	xor cx, cx
-	mov dx, 37 ;start of 5th place in file (was 36, now 37 due to 2-byte scores)
-	int 21h
-
-	jmp @@moveNameAndScoreToFile
-
+    ; Position file pointer at 5th entry (1 byte header + 4*10 bytes)
+    mov ah, 42h
+    mov al, 1         
+    mov bx, [ScoresFileHandle]
+    xor cx, cx
+    mov dx, 40         ; Start of 5th record
+    int 21h
+    jmp @@moveNameAndScoreToFile
 
 @@putScoreIfTableIsEmpty:
-	;set file pointer to start of file:
-	mov ah, 42h
-	xor al, al
-	mov bx, [ScoresFileHandle]
-	xor cx, cx
-	xor dx, dx
-	int 21h
+    ; Position at start to update count
+    mov ah, 42h
+    xor al, al
+    mov bx, [ScoresFileHandle]
+    xor cx, cx
+    xor dx, dx
+    int 21h
 
-	mov [byte ptr FileReadBuffer], 1
+    ; Write count of 1
+    mov [byte ptr FileReadBuffer], 1
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 1
+    mov dx, offset FileReadBuffer
+    int 21h
 
-	;move updated amount of players to file:
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 1 ;one byte
-	mov dx, offset FileReadBuffer
-	int 21h
+    ; Position after header for writing score
+    mov ah, 42h
+    mov al, 0
+    mov bx, [ScoresFileHandle]
+    xor cx, cx
+    mov dx, 1          ; Skip header byte
+    int 21h
 
 @@moveNameAndScoreToFile:
-	;Move name to file
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 8 ;name length
-	mov dx, offset FileReadBuffer + 3
-	int 21h
+    ; Write name (8 bytes)
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 8
+    mov dx, offset FileReadBuffer + 3
+    int 21h
 
-	;Move score to file (2 bytes):
-	mov ah, 40h
-	mov bx, [ScoresFileHandle]
-	mov cx, 2 ;two bytes
-	mov dx, offset Score
-	int 21h
+    ; Write score (2 bytes)
+    mov ah, 40h
+    mov bx, [ScoresFileHandle]
+    mov cx, 2
+    mov dx, offset Score
+    int 21h
 
 
 	push [ScoresFileHandle]
@@ -782,8 +802,15 @@ proc PrintHighScoreTable
 	mov [byte ptr FileReadBuffer + 9], '$'
 	
 	mov ah, 9
+	mov dx, offset FileReadBuffer + 1
 	int 21h
 
+	;read score (2 bytes):
+	mov ah, 3Fh
+	mov bx, [ScoresFileHandle]
+	mov cx, 2
+	mov dx, offset FileReadBuffer + 1
+	int 21h
 
 	pop dx
 	push dx
@@ -793,13 +820,6 @@ proc PrintHighScoreTable
 	xor bh, bh
 	mov ah, 2
 	int 10h
-
-	;read score (2 bytes):
-	mov ah, 3Fh
-	mov bx, [ScoresFileHandle]
-	mov cx, 2
-	mov dx, offset FileReadBuffer + 1
-	int 21h
 
 	;print score:
 	mov ax, [word ptr FileReadBuffer + 1]
