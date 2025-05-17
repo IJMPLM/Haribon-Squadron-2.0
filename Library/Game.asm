@@ -1178,7 +1178,7 @@ proc PlayGame
     call PlaySoundShieldActivate   ; Add shield activation sound
     mov [byte ptr InvincibleActive], 1   
     mov [word ptr InvincibleCounter], 36
-    jmp @@readKey
+    jmp @@printShooterAgain
 
 @@freezePressed:
 	cmp [byte ptr FreezeActive], 1 
@@ -1200,7 +1200,7 @@ proc PlayGame
     call PrintAliens
     jmp @@readKey
 
-@@regenerateHeart:
+@@regenerateHeart:	
 	cmp [LivesRemaining], 3 ; Max lives is 3
     jae @@readKey
 
