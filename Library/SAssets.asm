@@ -216,33 +216,30 @@ endp playSoundShoot
 ; ----------------------------------------------------------------------
 
 proc playSoundDeath
-    mov al, 0b6h ; Set channel 2 (the PC speaker) to operate in square wave mode
+    mov al, 0b6h
     out 43h, al
-    mov ax, 0c74h ; Set the frequency of the sound (in this case, roughly 3276 Hz)
+    mov ax, 0c74h ; Keep original frequency
     out 42h, al
     mov al, ah
     out 42h, al
     in al, 61h
-    or al, 3 ; Turn on the speaker
+    or al, 3
     out 61h, al
 
-    ; Delay for a while
-    mov cx, 0ffffh
-    mov bx, 0ah ; Repeat the delay 10 times
-    outer_delay:
-        push cx ; Save the original value of cx
-        delaySoundDeath:
-            nop
-            loop delaySoundDeath
-        pop cx ; Restore the original value of cx
-        dec bx ; Decrease the counter
-        jnz outer_delay ; Repeat the delay if bx is not zero
+    ; Simpler delay structure
+    mov bx, 14h ; Number of iterations
+@@outer_delay:
+    mov cx, 0FFFFh
+@@delay_loop:
+    nop
+    nop
+    loop @@delay_loop
+    dec bx
+    jnz @@outer_delay
 
-    ; Turn off the speaker
     in al, 61h
     and al, 0fch
     out 61h, al
-
     ret
 endp playSoundDeath
 
