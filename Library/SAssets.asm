@@ -1,19 +1,74 @@
 CODESEG
 
 proc PlaySoundLaser
+    ; First tone
     mov al, 0b6h
     out 43h, al
-    mov ax, 444 ; High frequency for laser
+    mov ax, 1500  ; First frequency
     out 42h, al
     mov al, ah
     out 42h, al
     in al, 61h
     or al, 3
     out 61h, al
-    mov cx, 0ffffh
-    delay_laser:
+    mov cx, 0FFFFh
+    delay_heal1:
         nop
-        loop delay_laser
+        loop delay_heal1
+        
+    ; Turn off speaker between tones
+    in al, 61h
+    and al, 0fch
+    out 61h, al
+    
+    ; Short pause between tones
+    mov cx, 1000h
+    delay_between:
+        nop
+        loop delay_between
+    
+    ; Second tone
+    mov al, 0b6h
+    out 43h, al
+    mov ax, 1800  ; Second frequency
+    out 42h, al
+    mov al, ah
+    out 42h, al
+    in al, 61h
+    or al, 3
+    out 61h, al
+    mov cx, 0FFFFh
+    delay_heal2:
+        nop
+        loop delay_heal2
+        
+    ; Turn off speaker between second and third tones
+    in al, 61h
+    and al, 0fch
+    out 61h, al
+    
+    ; Short pause before third tone
+    mov cx, 1000h
+    delay_between2:
+        nop
+        loop delay_between2
+    
+    ; Third tone (higher pitch to complete pheww sound)
+    mov al, 0b6h
+    out 43h, al
+    mov ax, 2500  ; Third frequency (higher)
+    out 42h, al
+    mov al, ah
+    out 42h, al
+    in al, 61h
+    or al, 3
+    out 61h, al
+    mov cx, 08000h  ; Slightly shorter duration for final tone
+    delay_heal3:
+        nop
+        loop delay_heal3
+        
+    ; Turn off speaker
     in al, 61h
     and al, 0fch
     out 61h, al
