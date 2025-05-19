@@ -10,6 +10,14 @@
     <br />
 </p>
 
+# What's New?
+- Complete Visual Overhaul
+- Complete Controller Support for DualShock 4
+- All New Combo Counter to Enable Dynamic Gameplay
+- Complete New Set of Ships and Power Ups
+- New Levels, New Aliens, New Environments, New Challenges
+- Enjoy a whole new experience of Squadrons and gain your rightful rank as a Haribon
+
 <!-- TABLE OF CONTENTS -->
 <details open="open">
   <summary><h2 style="display: inline-block">Table of Contents</h2></summary>
@@ -41,10 +49,10 @@ This repository contains the source code for Haribon Squadron 2.0, a fresh relea
 ### **🎮 Gameplay Demo**
 
   <p align="center">
-    <img src="images/haribon-squadron-2.0-gameplay-demo.gif" alt="gameplay demo" width="600" height="auto">
+    <img src="images/Haribon-Squadron-2.0-DemoVideo.gif" alt="gameplay demo" width="600" height="auto">
   </p>
 
-### **⚙ Technology Used**
+### **⚙ Technologies Used**
 
 1. Language: The game is written entirely in x86 assembly language.
 2. Assembly: Using tasm as an assembler along with linkers such as tlink and complink.
@@ -94,8 +102,8 @@ Keyboard Input    -> Controller Input (DS4)
 - T                 -> Down LeftStick
 - Enter             -> Button (Options)
 - Z                 -> Button (Square)
-- X                 -> Button (Triangle)
-- C                 -> Button (O)
+- X                 -> Button (O)
+- C                 -> Button (Triangle)
 <br>
 <br>
 

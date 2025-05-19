@@ -10,8 +10,8 @@ include "Library/Database.asm"
 include "Library/GAssets.asm"
 include "Library/NAssets.asm"
 
-	DebugBool						db	0
-	UnliSkills						db 1 
+	DebugBool						db 0
+	UnliSkills						db 0 
 
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
