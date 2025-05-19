@@ -11,7 +11,7 @@ include "Library/GAssets.asm"
 include "Library/NAssets.asm"
 
 	DebugBool						db	0
-	UnliSkills						db  0
+	UnliSkills						db 1 
 
 ; -----------------------------------------------------------
 ; Accessing bitmap files and text files for the game assets
@@ -799,7 +799,7 @@ endp InitializeLevel
 ; Initiating the game, setting the initial values
 ; -----------------------------------------------
 proc InitializeGame
-	mov [word ptr Score], 300
+	mov [word ptr Score], 0
 	mov [byte ptr LivesRemaining], 3
 	mov [byte ptr Level], 1
 
@@ -1058,7 +1058,7 @@ proc PlayGame
 	mov ah, 2
 	int 21h
 
-	push 0
+	push 18
 	call Delay
 
 	pop dx
@@ -1178,7 +1178,7 @@ proc PlayGame
     call PlaySoundShieldActivate   ; Add shield activation sound
     mov [byte ptr InvincibleActive], 1   
     mov [word ptr InvincibleCounter], 36
-    jmp @@printShooterAgain
+    jmp @@readKey
 
 @@freezePressed:
 	cmp [byte ptr FreezeActive], 1 
@@ -1200,7 +1200,7 @@ proc PlayGame
     call PrintAliens
     jmp @@readKey
 
-@@regenerateHeart:	
+@@regenerateHeart:
 	cmp [LivesRemaining], 3 ; Max lives is 3
     jae @@readKey
 
@@ -1506,7 +1506,7 @@ proc PlayGame
 	push BlackColor
 	call PrintColor
 
-	cmp [byte ptr AliensLeftAmount], 0
+	cmp [byte ptr AliensLeftAmount], 3
 	jbe @@setNewLevel
 
 	;Check if Alien hit:
